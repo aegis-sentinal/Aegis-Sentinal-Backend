@@ -26,8 +26,8 @@ The platform is developed across distinct operational phases. **Phases 1 through
 | **Phase 5** | **Multi-Tenancy & RBAC** | Org & Workspace context scoping, `TenantResolverFilter`, `TenantContext`, `X-Organization-Id` & `X-Workspace-Id` headers, fine-grained `@PreAuthorize` permission evaluator | ✅ Completed |
 | **Phase 6** | **Security Hardening & Audit** | Rate-limiting filter (`RateLimitingFilter`), OWASP security headers, `SecurityAuditLogger`, structured `SecurityAuditEvent` publisher | ✅ Completed |
 | **Phase 7** | **API Specs & Dev Experience** | SpringDoc OpenAPI 3.0 setup, Swagger UI (`/swagger-ui.html`), `ApiErrorResponse` standardized error schema, Postman v2.1 collection, IntelliJ HTTP client, developer guide | ✅ Completed |
-| **Phase 8** | **Detection Domain** | Real-time cloud log ingestion, detection rule engine, alert processing & correlation | 📅 Next |
-| **Phase 9** | **Investigation Domain** | Incident timeline construction, evidence graph, forensic artifact analysis | 📅 Planned |
+| **Phase 8** | **Detection Domain** | Real-time cloud log ingestion, detection rule engine, alert processing & correlation, Flyway V4 migration | ✅ Completed |
+| **Phase 9** | **Investigation Domain** | Incident timeline construction, evidence graph, forensic artifact analysis | 📅 Next |
 | **Phase 10** | **Watchtower Domain** | Threat intelligence feed ingestion, IOC matching, vulnerability enrichment | 📅 Planned |
 | **Phase 11** | **Forge Domain** | SOAR automation playbooks, automated mitigation workflows, action triggers | 📅 Planned |
 | **Phase 12** | **Oracle Domain** | AI security analyst assistant, natural language threat querying, incident summarization | 📅 Planned |
@@ -84,6 +84,12 @@ All endpoints are versioned under the `/api/aegis/v1` base URI.
 | `GET` | `/api/aegis/v1/rbac-test/org-admin` | Verify `ORG_ADMIN` role | ✅ Bearer JWT | `@PreAuthorize("hasRole('ORG_ADMIN')")` |
 | `GET` | `/api/aegis/v1/rbac-test/orgs/{orgId}/alerts` | Verify tenant organization alert access | ✅ Bearer JWT | `X-Organization-Id` |
 | `GET` | `/api/aegis/v1/rbac-test/orgs/{orgId}/workspaces/{wsId}/alerts` | Verify tenant workspace alert access | ✅ Bearer JWT | `X-Organization-Id`, `X-Workspace-Id` |
+| `GET` | `/api/aegis/v1/alerts` | Paginated list of security alerts with filtering | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:read')")` |
+| `GET` | `/api/aegis/v1/alerts/{id}` | Get security alert details by ID | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:read')")` |
+| `PATCH` | `/api/aegis/v1/alerts/{id}/status` | Update alert status & resolution notes | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:write')")` |
+| `GET` | `/api/aegis/v1/alerts/metrics` | Retrieve aggregate posture metrics & MTTR | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:read')")` |
+| `POST` | `/api/aegis/v1/telemetry/ingest` | Stream cloud telemetry event & trigger rules | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:write')")` |
+| `GET` | `/api/aegis/v1/rules` | Retrieve list of active Sigma detection rules | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:read')")` |
 
 ---
 
