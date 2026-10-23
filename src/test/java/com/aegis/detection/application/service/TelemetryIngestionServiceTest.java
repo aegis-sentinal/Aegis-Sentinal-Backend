@@ -40,6 +40,10 @@ class TelemetryIngestionServiceTest {
   @Mock private OrganizationJpaRepository organizationRepository;
   @Mock private WorkspaceJpaRepository workspaceRepository;
   @Mock private com.aegis.investigation.application.service.IncidentService incidentService;
+  @Mock private com.aegis.detection.application.parser.AzureActivityLogParser azureParser;
+  @Mock private com.aegis.detection.application.parser.GcpCloudAuditLogParser gcpParser;
+  @Mock private com.aegis.intelligence.infrastructure.persistence.jpa.ThreatIndicatorJpaRepository threatIndicatorRepository;
+  @Mock private com.aegis.nexus.application.service.SiemForwardingService siemForwardingService;
 
   private TelemetryIngestionService ingestionService;
 
@@ -57,7 +61,11 @@ class TelemetryIngestionServiceTest {
             organizationRepository,
             workspaceRepository,
             new ObjectMapper(),
-            incidentService);
+            incidentService,
+            azureParser,
+            gcpParser,
+            threatIndicatorRepository,
+            siemForwardingService);
 
     orgId = UUID.randomUUID();
     testOrg = Organization.builder().id(orgId).name("Acme Corp").slug("acme").build();

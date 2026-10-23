@@ -22,6 +22,7 @@ import com.aegis.identity.infrastructure.persistence.jpa.OrganizationJpaReposito
 import com.aegis.identity.infrastructure.persistence.jpa.WorkspaceJpaRepository;
 import com.aegis.investigation.infrastructure.persistence.jpa.IncidentJpaRepository;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,7 +61,8 @@ class ForgeAutomationServiceTest {
             organizationRepository,
             workspaceRepository,
             alertRepository,
-            incidentRepository);
+            incidentRepository,
+            List.of());
 
     orgId = UUID.randomUUID();
     playbookId = UUID.randomUUID();

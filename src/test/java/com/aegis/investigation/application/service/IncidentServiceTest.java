@@ -20,6 +20,7 @@ import com.aegis.investigation.infrastructure.persistence.jpa.EvidenceArtifactJp
 import com.aegis.investigation.infrastructure.persistence.jpa.IncidentCommentJpaRepository;
 import com.aegis.investigation.infrastructure.persistence.jpa.IncidentJpaRepository;
 import com.aegis.investigation.infrastructure.persistence.jpa.TimelineEventJpaRepository;
+import com.aegis.investigation.infrastructure.storage.MinioEvidenceStorageService;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,6 +40,8 @@ class IncidentServiceTest {
   @Mock private TimelineEventJpaRepository timelineEventRepository;
   @Mock private EvidenceArtifactJpaRepository evidenceArtifactRepository;
   @Mock private IncidentCommentJpaRepository commentRepository;
+  @Mock private IncidentCorrelationEngine correlationEngine;
+  @Mock private MinioEvidenceStorageService minioStorageService;
 
   private IncidentService incidentService;
 
@@ -54,7 +57,9 @@ class IncidentServiceTest {
             incidentRepository,
             timelineEventRepository,
             evidenceArtifactRepository,
-            commentRepository);
+            commentRepository,
+            correlationEngine,
+            minioStorageService);
 
     orgId = UUID.randomUUID();
     incidentId = UUID.randomUUID();
@@ -138,7 +143,7 @@ class IncidentServiceTest {
   }
 
   @Test
-  @DisplayName("correlateAlertIntoIncident creates incident dossier from alert")
+  @DisplayName("correlateAlertIntoIncident delegates to IncidentCorrelationEngine")
   void correlateAlertIntoIncident_success() {
     Alert alert =
         Alert.builder()
@@ -153,14 +158,20 @@ class IncidentServiceTest {
             .resourceId("arn:aws:s3:::prod-customer-data")
             .build();
 
-    when(incidentRepository.save(any(Incident.class))).thenAnswer(i -> i.getArgument(0));
+    Incident expectedIncident =
+        Incident.builder()
+            .id(UUID.randomUUID())
+            .organization(testOrg)
+            .title("Security Incident: S3 Bucket Made Public")
+            .severity(AlertSeverity.CRITICAL)
+            .build();
+
+    when(correlationEngine.correlateAlert(alert)).thenReturn(expectedIncident);
 
     Incident created = incidentService.correlateAlertIntoIncident(alert);
 
     assertThat(created).isNotNull();
     assertThat(created.getTitle()).contains("S3 Bucket Made Public");
-    assertThat(created.getTimelineEvents()).hasSize(1);
-    assertThat(created.getEvidenceArtifacts()).hasSize(1);
-    verify(incidentRepository).save(any(Incident.class));
+    verify(correlationEngine).correlateAlert(alert);
   }
 }
