@@ -25,6 +25,9 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 @Entity
 @Table(name = "integration_connectors")
 @Getter
@@ -70,7 +73,8 @@ public class IntegrationConnector {
   @Column(name = "last_sync")
   private Instant lastSync;
 
-  @Column(columnDefinition = "TEXT")
+  @JdbcTypeCode(SqlTypes.JSON)
+  @Column(columnDefinition = "jsonb")
   private String config;
 
   @CreationTimestamp
