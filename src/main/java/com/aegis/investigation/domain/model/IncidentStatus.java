@@ -38,7 +38,8 @@ public enum IncidentStatus {
   }
 
   @Converter(autoApply = true)
-  public static class IncidentStatusConverter implements AttributeConverter<IncidentStatus, String> {
+  public static class IncidentStatusConverter
+      implements AttributeConverter<IncidentStatus, String> {
     @Override
     public String convertToDatabaseColumn(IncidentStatus attribute) {
       return attribute != null ? attribute.getValue() : null;

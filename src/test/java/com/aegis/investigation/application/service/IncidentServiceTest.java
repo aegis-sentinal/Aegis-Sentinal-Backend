@@ -125,10 +125,13 @@ class IncidentServiceTest {
     UUID authorId = UUID.randomUUID();
     IncidentCommentResponse response =
         incidentService.addComment(
-            incidentId, orgId, "Verified IP is associated with known VPN node", authorId, "Jane Doe");
+            incidentId,
+            orgId,
+            "Verified IP is associated with known VPN node",
+            authorId,
+            "Jane Doe");
 
-    assertThat(response.message())
-        .isEqualTo("Verified IP is associated with known VPN node");
+    assertThat(response.message()).isEqualTo("Verified IP is associated with known VPN node");
     assertThat(response.authorName()).isEqualTo("Jane Doe");
     verify(commentRepository).save(any(IncidentComment.class));
     verify(timelineEventRepository).save(any(TimelineEvent.class));

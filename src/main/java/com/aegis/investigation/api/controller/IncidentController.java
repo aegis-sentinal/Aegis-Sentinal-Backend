@@ -71,7 +71,9 @@ public class IncidentController {
   public Page<IncidentResponse> getIncidents(
       @Parameter(description = "Page number (0-based)") @RequestParam(defaultValue = "0") int page,
       @Parameter(description = "Page size limit") @RequestParam(defaultValue = "20") int limit,
-      @Parameter(description = "Filter by status (new, investigating, escalated, remediation_pending, resolved, closed)")
+      @Parameter(
+              description =
+                  "Filter by status (new, investigating, escalated, remediation_pending, resolved, closed)")
           @RequestParam(required = false)
           IncidentStatus status,
       @Parameter(description = "Filter by severity (critical, high, medium, low)")
@@ -136,7 +138,8 @@ public class IncidentController {
   private UUID resolveOrganizationId() {
     TenantContext context = TenantContext.get();
     if (context == null || context.organizationId() == null) {
-      throw new BadRequestException("Organization tenant context could not be resolved from headers or token.");
+      throw new BadRequestException(
+          "Organization tenant context could not be resolved from headers or token.");
     }
     return context.organizationId();
   }

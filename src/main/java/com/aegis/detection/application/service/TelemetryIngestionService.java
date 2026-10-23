@@ -133,7 +133,8 @@ public class TelemetryIngestionService {
       try {
         incidentService.correlateAlertIntoIncident(savedAlert);
       } catch (Exception e) {
-        log.warn("Failed to correlate alert {} into incident: {}", savedAlert.getId(), e.getMessage());
+        log.warn(
+            "Failed to correlate alert {} into incident: {}", savedAlert.getId(), e.getMessage());
       }
       log.warn(
           "🚨 SECURITY ALERT GENERATED [{}]: {} for org {}",

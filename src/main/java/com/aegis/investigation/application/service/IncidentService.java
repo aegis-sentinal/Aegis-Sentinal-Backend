@@ -91,7 +91,10 @@ public class IncidentService {
             .description(
                 reason != null && !reason.trim().isEmpty()
                     ? reason
-                    : "Transitioned from " + previousStatus.getValue() + " to " + newStatus.getValue())
+                    : "Transitioned from "
+                        + previousStatus.getValue()
+                        + " to "
+                        + newStatus.getValue())
             .source("analyst-action")
             .build();
 
