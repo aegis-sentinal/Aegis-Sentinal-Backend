@@ -27,8 +27,8 @@ The platform is developed across distinct operational phases. **Phases 1 through
 | **Phase 6** | **Security Hardening & Audit** | Rate-limiting filter (`RateLimitingFilter`), OWASP security headers, `SecurityAuditLogger`, structured `SecurityAuditEvent` publisher | ✅ Completed |
 | **Phase 7** | **API Specs & Dev Experience** | SpringDoc OpenAPI 3.0 setup, Swagger UI (`/swagger-ui.html`), `ApiErrorResponse` standardized error schema, Postman v2.1 collection, IntelliJ HTTP client, developer guide | ✅ Completed |
 | **Phase 8** | **Detection Domain** | Real-time cloud log ingestion, detection rule engine, alert processing & correlation, Flyway V4 migration | ✅ Completed |
-| **Phase 9** | **Investigation Domain** | Incident timeline construction, evidence graph, forensic artifact analysis | 📅 Next |
-| **Phase 10** | **Watchtower Domain** | Threat intelligence feed ingestion, IOC matching, vulnerability enrichment | 📅 Planned |
+| **Phase 9** | **Investigation Domain** | Incident timeline construction, evidence graph, forensic artifact analysis, Flyway V5 migration | ✅ Completed |
+| **Phase 10** | **Watchtower Domain** | Threat intelligence feed ingestion, IOC matching, vulnerability enrichment | 📅 Next |
 | **Phase 11** | **Forge Domain** | SOAR automation playbooks, automated mitigation workflows, action triggers | 📅 Planned |
 | **Phase 12** | **Oracle Domain** | AI security analyst assistant, natural language threat querying, incident summarization | 📅 Planned |
 | **Phase 13** | **Platform Hardening & Release** | Production deployment, end-to-end performance benchmarking, final release | 📅 Planned |
@@ -90,6 +90,10 @@ All endpoints are versioned under the `/api/aegis/v1` base URI.
 | `GET` | `/api/aegis/v1/alerts/metrics` | Retrieve aggregate posture metrics & MTTR | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:read')")` |
 | `POST` | `/api/aegis/v1/telemetry/ingest` | Stream cloud telemetry event & trigger rules | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:write')")` |
 | `GET` | `/api/aegis/v1/rules` | Retrieve list of active Sigma detection rules | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:read')")` |
+| `GET` | `/api/aegis/v1/incidents` | Paginated security incidents with severity/status filtering | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:read')")` |
+| `GET` | `/api/aegis/v1/incidents/{id}` | Full incident dossier, attack timeline, & evidence graph | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:read')")` |
+| `PATCH` | `/api/aegis/v1/incidents/{id}/status` | Transition incident lifecycle (new, investigating, resolved) | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:write')")` |
+| `POST` | `/api/aegis/v1/incidents/{id}/comments` | Add analyst annotation comment and timeline entry | ✅ Bearer JWT | `@PreAuthorize("hasAuthority('alert:write')")` |
 
 ---
 
