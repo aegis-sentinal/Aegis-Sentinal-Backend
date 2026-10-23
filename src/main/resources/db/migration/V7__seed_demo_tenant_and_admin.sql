@@ -22,13 +22,13 @@ VALUES (
 )
 ON CONFLICT (email) DO NOTHING;
 
--- Assign ORG_ADMIN role to admin user
+-- Assign ORG_ADMIN role to admin user scoped to production workspace
 INSERT INTO user_roles (id, user_id, role_id, organization_id, workspace_id)
 VALUES (
     '00000000-0000-0000-0000-000000000400',
     '00000000-0000-0000-0000-000000000300',
     '00000000-0000-0000-0000-000000000002',
     '00000000-0000-0000-0000-000000000100',
-    NULL
+    '00000000-0000-0000-0000-000000000200'
 )
 ON CONFLICT (user_id, role_id, organization_id, workspace_id) DO NOTHING;
