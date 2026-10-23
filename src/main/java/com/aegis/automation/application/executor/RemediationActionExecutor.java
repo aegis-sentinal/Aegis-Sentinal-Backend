@@ -6,6 +6,10 @@ public interface RemediationActionExecutor {
 
   ActionType getSupportedAction();
 
+  default boolean supports(ActionType actionType) {
+    return getSupportedAction() == actionType;
+  }
+
   ExecutionResult execute(RemediationContext context);
 
   VerificationResult verify(RemediationContext context);

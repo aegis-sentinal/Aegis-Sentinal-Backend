@@ -17,7 +17,12 @@ public class KubernetesQuarantineExecutor implements RemediationActionExecutor {
 
   @Override
   public ActionType getSupportedAction() {
-    return ActionType.QUARANTINE_EC2;
+    return ActionType.QUARANTINE_K8S_POD;
+  }
+
+  @Override
+  public boolean supports(ActionType actionType) {
+    return actionType == ActionType.QUARANTINE_K8S_POD || actionType == ActionType.QUARANTINE_EC2;
   }
 
   @Override
