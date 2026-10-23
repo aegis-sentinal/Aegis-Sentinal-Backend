@@ -1,0 +1,57 @@
+name: Deploy Aegis Backend to btech
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, btech-deploy]
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          clean: true
+
+      - name: Build jar
+        run: |
+          export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
+          /opt/gradle/gradle-9.5.1/bin/gradle bootJar --no-daemon -q
+          ls -lh build/libs/
+
+      - name: Backup current jar
+        run: |
+          JAR=/opt/aegis/build/libs/aegis-backend-0.1.0-SNAPSHOT.jar
+          if [ -f "$JAR" ]; then cp "$JAR" "$JAR.bak"; fi
+
+      - name: Deploy new jar
+        run: |
+          cp build/libs/aegis-backend-0.1.0-SNAPSHOT.jar /opt/aegis/build/libs/aegis-backend-0.1.0-SNAPSHOT.jar
+
+      - name: Restart service
+        run: |
+          sudo /usr/bin/systemctl restart aegis.service
+          sleep 5
+          sudo /usr/bin/systemctl status aegis.service --no-pager | head -5
+
+      - name: Health check (with rollback)
+        run: |
+          JAR=/opt/aegis/build/libs/aegis-backend-0.1.0-SNAPSHOT.jar
+          for i in $(seq 1 30); do
+            sleep 3
+            STATUS=$(curl -s --max-time 5 http://localhost:8080/actuator/health | grep -o '"status":"[A-Z]*"' || true)
+            echo "attempt $i: $STATUS"
+            if echo "$STATUS" | grep -q '"status":"UP"'; then
+              echo "HEALTH OK — deployment successful"
+              exit 0
+            fi
+          done
+          echo "HEALTH CHECK FAILED after 90s — rolling back"
+          if [ -f "$JAR.bak" ]; then
+            cp "$JAR.bak" "$JAR"
+            sudo /usr/bin/systemctl restart aegis.service
+            echo "Rolled back to previous jar"
+          fi
+          exit 1
