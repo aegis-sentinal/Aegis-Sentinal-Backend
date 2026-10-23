@@ -14,6 +14,7 @@ import com.aegis.identity.domain.repository.UserIdentityRepository;
 import com.aegis.identity.domain.repository.UserRepository;
 import com.aegis.identity.domain.repository.UserRoleRepository;
 import com.aegis.identity.domain.repository.WorkspaceRepository;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -58,13 +59,18 @@ public class OAuthOnboardingService {
         workspaceRepository.save(Workspace.create(org, "Default Workspace", "default"));
 
     User user =
-        userRepository.save(
-            User.create(
-                org,
-                userInfo.email(),
-                "$2a$10$UnusablePasswordForOAuthUserPlaceholderSecretHash",
-                userInfo.firstName(),
-                userInfo.lastName()));
+        User.builder()
+            .organization(org)
+            .email(userInfo.email())
+            .passwordHash("$2a$10$UnusablePasswordForOAuthUserPlaceholderSecretHash")
+            .firstName(userInfo.firstName())
+            .lastName(userInfo.lastName())
+            .isActive(true)
+            .isMfaEnabled(false)
+            .emailVerified(true)
+            .build();
+
+    user = userRepository.save(user);
 
     UserIdentity identity =
         new UserIdentity(user, userInfo.provider(), userInfo.providerSubject(), userInfo.email());
@@ -78,7 +84,7 @@ public class OAuthOnboardingService {
     UserRole userRole = UserRole.create(user, orgAdminRole, org, workspace);
     userRoleRepository.save(userRole);
 
-    return createSessionService.issueTokensAndCreateSession(user);
+    return createSessionService.issueTokensAndCreateSession(user, List.of("oauth"));
   }
 
   private String generateSlug(String name, String email) {

@@ -6,6 +6,7 @@ import com.aegis.identity.application.query.AuthenticationResult;
 import com.aegis.identity.domain.entity.Session;
 import com.aegis.identity.domain.entity.User;
 import com.aegis.identity.domain.repository.SessionRepository;
+import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,17 +29,19 @@ public class CreateSessionService {
 
   @Transactional
   public Session create(User user, String refreshToken) {
-
     String tokenHash = refreshTokenHasher.hash(refreshToken);
-
     Session session = Session.create(user, tokenHash);
-
     return sessionRepository.save(session);
   }
 
   @Transactional
   public AuthenticationResult issueTokensAndCreateSession(User user) {
-    String accessToken = tokenService.generateAccessToken(user);
+    return issueTokensAndCreateSession(user, List.of("pwd"));
+  }
+
+  @Transactional
+  public AuthenticationResult issueTokensAndCreateSession(User user, List<String> amr) {
+    String accessToken = tokenService.generateAccessToken(user, amr);
     String refreshToken = tokenService.generateRefreshToken(user);
 
     create(user, refreshToken);

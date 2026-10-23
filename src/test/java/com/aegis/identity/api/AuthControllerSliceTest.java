@@ -34,8 +34,8 @@ class AuthControllerSliceTest {
 
   @Test
   @DisplayName(
-      "Controller Test: /api/aegis/v1/auth/register creates organization and returns 200 OK with tokens")
-  void testRegisterEndpoint_returnsTokens() throws Exception {
+      "Controller Test: /api/aegis/v1/auth/register creates organization and returns 201 CREATED with pending status")
+  void testRegisterEndpoint_returnsPendingStatus() throws Exception {
     String unique = UUID.randomUUID().toString();
     RegisterRequest req =
         new RegisterRequest(
@@ -57,7 +57,7 @@ class AuthControllerSliceTest {
             .andExpect(status().isCreated())
             .andReturn();
 
-    assertThat(result.getResponse().getContentAsString()).contains("accessToken");
-    assertThat(result.getResponse().getContentAsString()).contains("refreshToken");
+    assertThat(result.getResponse().getContentAsString()).contains("EMAIL_VERIFICATION_REQUIRED");
+    assertThat(result.getResponse().getContentAsString()).contains("verify your account");
   }
 }

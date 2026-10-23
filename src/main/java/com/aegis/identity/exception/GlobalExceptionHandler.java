@@ -88,4 +88,22 @@ public class GlobalExceptionHandler {
             path);
     return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
   }
+
+  @ExceptionHandler(com.aegis.common.exception.ResourceNotFoundException.class)
+  public ResponseEntity<ApiErrorResponse> handleResourceNotFound(
+      com.aegis.common.exception.ResourceNotFoundException ex, HttpServletRequest request) {
+    String path = request != null ? request.getRequestURI() : null;
+    ApiErrorResponse body =
+        new ApiErrorResponse(HttpStatus.NOT_FOUND.value(), "Not Found", ex.getMessage(), path);
+    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+  }
+
+  @ExceptionHandler(com.aegis.common.exception.BadRequestException.class)
+  public ResponseEntity<ApiErrorResponse> handleBadRequest(
+      com.aegis.common.exception.BadRequestException ex, HttpServletRequest request) {
+    String path = request != null ? request.getRequestURI() : null;
+    ApiErrorResponse body =
+        new ApiErrorResponse(HttpStatus.BAD_REQUEST.value(), "Bad Request", ex.getMessage(), path);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+  }
 }

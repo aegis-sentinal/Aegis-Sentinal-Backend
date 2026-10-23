@@ -2,7 +2,6 @@ package com.aegis.identity.application.service;
 
 import com.aegis.identity.application.command.RegisterOrganizationCommand;
 import com.aegis.identity.application.port.PasswordHasher;
-import com.aegis.identity.application.query.AuthenticationResult;
 import com.aegis.identity.domain.entity.Organization;
 import com.aegis.identity.domain.entity.Role;
 import com.aegis.identity.domain.entity.User;
@@ -13,6 +12,9 @@ import com.aegis.identity.domain.repository.RoleRepository;
 import com.aegis.identity.domain.repository.UserRepository;
 import com.aegis.identity.domain.repository.UserRoleRepository;
 import com.aegis.identity.domain.repository.WorkspaceRepository;
+import com.aegis.identity.infrastructure.audit.AuditEventType;
+import com.aegis.identity.infrastructure.audit.SecurityAuditEvent;
+import com.aegis.identity.infrastructure.audit.SecurityAuditLogger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,7 +27,8 @@ public class RegisterOrganizationService {
   private final RoleRepository roleRepository;
   private final UserRoleRepository userRoleRepository;
   private final PasswordHasher passwordHasher;
-  private final CreateSessionService createSessionService;
+  private final SendEmailVerificationService sendEmailVerificationService;
+  private final SecurityAuditLogger auditLogger;
 
   public RegisterOrganizationService(
       OrganizationRepository organizationRepository,
@@ -34,7 +37,8 @@ public class RegisterOrganizationService {
       RoleRepository roleRepository,
       UserRoleRepository userRoleRepository,
       PasswordHasher passwordHasher,
-      CreateSessionService createSessionService) {
+      SendEmailVerificationService sendEmailVerificationService,
+      SecurityAuditLogger auditLogger) {
 
     this.organizationRepository = organizationRepository;
     this.workspaceRepository = workspaceRepository;
@@ -42,11 +46,12 @@ public class RegisterOrganizationService {
     this.roleRepository = roleRepository;
     this.userRoleRepository = userRoleRepository;
     this.passwordHasher = passwordHasher;
-    this.createSessionService = createSessionService;
+    this.sendEmailVerificationService = sendEmailVerificationService;
+    this.auditLogger = auditLogger;
   }
 
   @Transactional
-  public AuthenticationResult execute(RegisterOrganizationCommand command) {
+  public User execute(RegisterOrganizationCommand command) {
 
     if (userRepository.existsByEmail(command.email())) {
       throw new IllegalArgumentException("Email is already registered");
@@ -72,13 +77,18 @@ public class RegisterOrganizationService {
     String passwordHash = passwordHasher.hash(command.password());
 
     User user =
-        userRepository.save(
-            User.create(
-                organization,
-                command.email(),
-                passwordHash,
-                command.firstName(),
-                command.lastName()));
+        User.builder()
+            .organization(organization)
+            .email(command.email())
+            .passwordHash(passwordHash)
+            .firstName(command.firstName())
+            .lastName(command.lastName())
+            .isActive(true)
+            .isMfaEnabled(false)
+            .emailVerified(false)
+            .build();
+
+    user = userRepository.save(user);
 
     Role orgAdminRole =
         roleRepository
@@ -87,6 +97,15 @@ public class RegisterOrganizationService {
 
     userRoleRepository.save(UserRole.create(user, orgAdminRole, organization, workspace));
 
-    return createSessionService.issueTokensAndCreateSession(user);
+    sendEmailVerificationService.execute(user);
+
+    auditLogger.logEvent(
+        SecurityAuditEvent.of(
+            AuditEventType.ACCOUNT_CREATED,
+            user.getId(),
+            "SUCCESS",
+            "Organization and admin account registered"));
+
+    return user;
   }
 }

@@ -1,0 +1,52 @@
+spring:
+  config:
+    activate:
+      on-profile: docker
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://postgres:5432/aegis}
+    username: ${SPRING_DATASOURCE_USERNAME:aegis}
+    password: ${SPRING_DATASOURCE_PASSWORD:aegis_dev}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    show-sql: false
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST:redis}
+      port: ${SPRING_DATA_REDIS_PORT:6379}
+      repositories:
+        enabled: false
+
+  kafka:
+    bootstrap-servers: ${SPRING_KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+
+logging:
+  level:
+    root: INFO
+    com.aegis: INFO
+    org.springframework.web: INFO
+
+aegis:
+  security:
+    jwt:
+      issuer: aegis-sentinel
+      secret: ${AEGIS_JWT_SECRET}
+      access-token-ttl: 15m
+      refresh-token-ttl: 7d

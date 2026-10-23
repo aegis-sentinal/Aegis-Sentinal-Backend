@@ -126,7 +126,11 @@ public class SecurityConfiguration {
                         "/api/aegis/v1/auth/register",
                         "/api/aegis/v1/auth/refresh",
                         "/api/aegis/v1/auth/logout",
-                        "/api/aegis/v1/auth/link-account")
+                        "/api/aegis/v1/auth/link-account",
+                        "/api/aegis/v1/auth/verify-email",
+                        "/api/aegis/v1/auth/resend-verification",
+                        "/api/aegis/v1/auth/mfa/verify",
+                        "/api/aegis/v1/auth/mfa/recovery")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

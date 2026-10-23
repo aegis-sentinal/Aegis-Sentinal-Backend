@@ -70,6 +70,9 @@ dependencies {
 tasks.withType<Test> {
     useJUnitPlatform()
     finalizedBy(tasks.jacocoTestReport)
+    environment("AEGIS_JWT_SECRET", "dGhpcy1pcy1hLXZlcnktc2VjdXJlLWRldmVsb3BtZW50LWp3dC1zZWNyZXQta2V5LTMyLWJ5dGVzLW1pbg==")
+    environment("GOOGLE_CLIENT_ID", "mock-google-client-id")
+    environment("GOOGLE_CLIENT_SECRET", "mock-google-client-secret")
 }
 
 jacoco {

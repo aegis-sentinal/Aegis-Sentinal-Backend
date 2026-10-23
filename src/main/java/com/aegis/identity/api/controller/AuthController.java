@@ -2,13 +2,18 @@ package com.aegis.identity.api.controller;
 
 import com.aegis.identity.api.dto.ApiErrorResponse;
 import com.aegis.identity.api.dto.AuthenticationResponse;
+import com.aegis.identity.api.dto.GenericMessageResponse;
 import com.aegis.identity.api.dto.LinkAccountRequest;
 import com.aegis.identity.api.dto.LoginRequest;
 import com.aegis.identity.api.dto.LogoutRequest;
+import com.aegis.identity.api.dto.MfaRecoveryRequest;
+import com.aegis.identity.api.dto.MfaVerifyChallengeRequest;
 import com.aegis.identity.api.dto.OrganizationResponse;
 import com.aegis.identity.api.dto.RefreshTokenRequest;
 import com.aegis.identity.api.dto.RegisterRequest;
+import com.aegis.identity.api.dto.ResendVerificationRequest;
 import com.aegis.identity.api.dto.UserResponse;
+import com.aegis.identity.api.dto.VerifyEmailRequest;
 import com.aegis.identity.api.dto.WorkspaceResponse;
 import com.aegis.identity.application.command.LinkAccountCommand;
 import com.aegis.identity.application.command.LoginUserCommand;
@@ -16,6 +21,7 @@ import com.aegis.identity.application.command.LogoutCommand;
 import com.aegis.identity.application.command.RefreshTokenCommand;
 import com.aegis.identity.application.command.RegisterOrganizationCommand;
 import com.aegis.identity.application.query.AuthenticationResult;
+import com.aegis.identity.application.query.LoginExecutionResult;
 import com.aegis.identity.application.query.UserContext;
 import com.aegis.identity.application.service.AuthenticateUserService;
 import com.aegis.identity.application.service.GetCurrentUserService;
@@ -23,6 +29,10 @@ import com.aegis.identity.application.service.LogoutService;
 import com.aegis.identity.application.service.OAuthAccountLinkService;
 import com.aegis.identity.application.service.RefreshTokenService;
 import com.aegis.identity.application.service.RegisterOrganizationService;
+import com.aegis.identity.application.service.ResendEmailVerificationService;
+import com.aegis.identity.application.service.VerifyEmailService;
+import com.aegis.identity.application.service.VerifyMfaChallengeService;
+import com.aegis.identity.application.service.VerifyMfaRecoveryService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -45,7 +55,7 @@ import org.springframework.web.bind.annotation.RestController;
 @Tag(
     name = "Authentication",
     description =
-        "Endpoints for user registration, authentication, token management, session logout, and profile queries")
+        "Endpoints for user registration, email verification, login authentication, MFA challenges, token refresh, and profile queries")
 @RestController
 @RequestMapping("/api/aegis/v1/auth")
 public class AuthController {
@@ -56,6 +66,10 @@ public class AuthController {
   private final LogoutService logoutService;
   private final GetCurrentUserService getCurrentUserService;
   private final OAuthAccountLinkService oAuthAccountLinkService;
+  private final VerifyEmailService verifyEmailService;
+  private final ResendEmailVerificationService resendEmailVerificationService;
+  private final VerifyMfaChallengeService verifyMfaChallengeService;
+  private final VerifyMfaRecoveryService verifyMfaRecoveryService;
 
   public AuthController(
       RegisterOrganizationService registerOrganizationService,
@@ -63,7 +77,11 @@ public class AuthController {
       RefreshTokenService refreshTokenService,
       LogoutService logoutService,
       GetCurrentUserService getCurrentUserService,
-      OAuthAccountLinkService oAuthAccountLinkService) {
+      OAuthAccountLinkService oAuthAccountLinkService,
+      VerifyEmailService verifyEmailService,
+      ResendEmailVerificationService resendEmailVerificationService,
+      VerifyMfaChallengeService verifyMfaChallengeService,
+      VerifyMfaRecoveryService verifyMfaRecoveryService) {
 
     this.registerOrganizationService = registerOrganizationService;
     this.authenticateUserService = authenticateUserService;
@@ -71,17 +89,21 @@ public class AuthController {
     this.logoutService = logoutService;
     this.getCurrentUserService = getCurrentUserService;
     this.oAuthAccountLinkService = oAuthAccountLinkService;
+    this.verifyEmailService = verifyEmailService;
+    this.resendEmailVerificationService = resendEmailVerificationService;
+    this.verifyMfaChallengeService = verifyMfaChallengeService;
+    this.verifyMfaRecoveryService = verifyMfaRecoveryService;
   }
 
   @Operation(
       summary = "Register organization & admin user",
       description =
-          "Creates a new tenant organization, default workspace, and initial administrator user account, returning JWT credentials.")
+          "Creates a new tenant organization, workspace, and administrator user account. Dispatches a verification email prior to issuing tokens.")
   @ApiResponses(
       value = {
         @ApiResponse(
             responseCode = "201",
-            description = "Organization registered successfully",
+            description = "Organization registered; verification email sent",
             content =
                 @Content(
                     mediaType = "application/json",
@@ -98,36 +120,37 @@ public class AuthController {
   @ResponseStatus(HttpStatus.CREATED)
   public AuthenticationResponse register(@Valid @RequestBody RegisterRequest request) {
 
-    AuthenticationResult result =
-        registerOrganizationService.execute(
-            new RegisterOrganizationCommand(
-                request.organizationName(),
-                request.organizationSlug(),
-                request.workspaceName(),
-                request.workspaceSlug(),
-                request.email(),
-                request.password(),
-                request.firstName(),
-                request.lastName()));
+    registerOrganizationService.execute(
+        new RegisterOrganizationCommand(
+            request.organizationName(),
+            request.organizationSlug(),
+            request.workspaceName(),
+            request.workspaceSlug(),
+            request.email(),
+            request.password(),
+            request.firstName(),
+            request.lastName()));
 
-    return new AuthenticationResponse(result.accessToken(), result.refreshToken(), "Bearer");
+    return AuthenticationResponse.registrationPending(
+        "Registration successful. Please check your email to verify your account.");
   }
 
   @Operation(
       summary = "User login with email and password",
-      description = "Authenticates user credentials and issues JWT Access Token and Refresh Token.")
+      description =
+          "Authenticates user credentials. Returns JWT tokens if MFA is disabled, or an MFA_REQUIRED challenge if MFA is enabled.")
   @ApiResponses(
       value = {
         @ApiResponse(
             responseCode = "200",
-            description = "Authentication successful",
+            description = "Authentication successful or MFA challenge issued",
             content =
                 @Content(
                     mediaType = "application/json",
                     schema = @Schema(implementation = AuthenticationResponse.class))),
         @ApiResponse(
             responseCode = "401",
-            description = "Invalid credentials or unauthorized",
+            description = "Invalid credentials, unverified email, or unauthorized",
             content =
                 @Content(
                     mediaType = "application/json",
@@ -136,9 +159,120 @@ public class AuthController {
   @PostMapping("/login")
   public AuthenticationResponse login(@Valid @RequestBody LoginRequest request) {
 
-    AuthenticationResult result =
+    LoginExecutionResult result =
         authenticateUserService.execute(new LoginUserCommand(request.email(), request.password()));
 
+    if ("MFA_REQUIRED".equals(result.status())) {
+      return AuthenticationResponse.mfaRequired(
+          result.challengeId().toString(), result.expiresIn());
+    }
+
+    AuthenticationResult authResult = result.authenticationResult();
+    return new AuthenticationResponse(
+        authResult.accessToken(), authResult.refreshToken(), "Bearer");
+  }
+
+  @Operation(
+      summary = "Verify user email address",
+      description = "Consumes a raw verification token to activate user email ownership.")
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Email verified successfully",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = GenericMessageResponse.class))),
+        @ApiResponse(
+            responseCode = "400",
+            description = "Invalid, expired, or already used verification token",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiErrorResponse.class)))
+      })
+  @PostMapping("/verify-email")
+  public GenericMessageResponse verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
+    verifyEmailService.execute(request.token());
+    return new GenericMessageResponse("Email verified successfully");
+  }
+
+  @Operation(
+      summary = "Resend email verification token",
+      description =
+          "Dispatches a new email verification token if the account exists and requires verification.")
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Generic status message returned to prevent email enumeration",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = GenericMessageResponse.class)))
+      })
+  @PostMapping("/resend-verification")
+  public GenericMessageResponse resendVerification(
+      @Valid @RequestBody ResendVerificationRequest request) {
+    resendEmailVerificationService.execute(request.email());
+    return new GenericMessageResponse(
+        "If the account exists and requires verification, a verification email has been sent.");
+  }
+
+  @Operation(
+      summary = "Verify 6-digit TOTP code for MFA login challenge",
+      description =
+          "Verifies a 6-digit authenticator TOTP code for an active login challenge and issues JWT tokens.")
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "MFA verification successful; JWT tokens issued",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = AuthenticationResponse.class))),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid TOTP code, expired challenge, or exceeded attempts limit",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiErrorResponse.class)))
+      })
+  @PostMapping("/mfa/verify")
+  public AuthenticationResponse verifyMfa(@Valid @RequestBody MfaVerifyChallengeRequest request) {
+    AuthenticationResult result =
+        verifyMfaChallengeService.execute(request.challengeId(), request.code());
+    return new AuthenticationResponse(result.accessToken(), result.refreshToken(), "Bearer");
+  }
+
+  @Operation(
+      summary = "Verify recovery code for MFA login challenge",
+      description =
+          "Consumes a single-use recovery code for an active login challenge and issues JWT tokens.")
+  @ApiResponses(
+      value = {
+        @ApiResponse(
+            responseCode = "200",
+            description = "Recovery code consumed successfully; JWT tokens issued",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = AuthenticationResponse.class))),
+        @ApiResponse(
+            responseCode = "401",
+            description = "Invalid recovery code or expired challenge",
+            content =
+                @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = ApiErrorResponse.class)))
+      })
+  @PostMapping("/mfa/recovery")
+  public AuthenticationResponse verifyMfaRecovery(@Valid @RequestBody MfaRecoveryRequest request) {
+    AuthenticationResult result =
+        verifyMfaRecoveryService.execute(request.challengeId(), request.recoveryCode());
     return new AuthenticationResponse(result.accessToken(), result.refreshToken(), "Bearer");
   }
 
@@ -177,7 +311,7 @@ public class AuthController {
       description = "Revokes user session and invalidates refresh token.")
   @ApiResponses(
       value = {
-        @ApiResponse(responseCode = "24", description = "Logout successful (No Content)"),
+        @ApiResponse(responseCode = "204", description = "Logout successful (No Content)"),
         @ApiResponse(
             responseCode = "400",
             description = "Invalid refresh token format",

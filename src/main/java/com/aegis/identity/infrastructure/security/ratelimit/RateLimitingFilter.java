@@ -78,7 +78,11 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     return path.startsWith("/api/aegis/v1/auth/login")
         || path.startsWith("/api/aegis/v1/auth/register")
         || path.startsWith("/api/aegis/v1/auth/refresh")
-        || path.startsWith("/api/aegis/v1/auth/link-account");
+        || path.startsWith("/api/aegis/v1/auth/link-account")
+        || path.startsWith("/api/aegis/v1/auth/verify-email")
+        || path.startsWith("/api/aegis/v1/auth/resend-verification")
+        || path.startsWith("/api/aegis/v1/auth/mfa/verify")
+        || path.startsWith("/api/aegis/v1/auth/mfa/recovery");
   }
 
   private String extractClientIp(HttpServletRequest request) {

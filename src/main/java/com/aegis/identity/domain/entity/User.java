@@ -56,6 +56,10 @@ public class User {
   @Column(name = "is_mfa_enabled", nullable = false)
   private Boolean isMfaEnabled = false;
 
+  @Builder.Default
+  @Column(name = "email_verified", nullable = false)
+  private Boolean emailVerified = false;
+
   @CreationTimestamp
   @Column(name = "created_at", nullable = false, updatable = false)
   private Instant createdAt;

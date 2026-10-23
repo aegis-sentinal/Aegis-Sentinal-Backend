@@ -9,6 +9,7 @@ import com.aegis.identity.domain.entity.UserIdentity;
 import com.aegis.identity.domain.repository.UserIdentityRepository;
 import com.aegis.identity.domain.repository.UserRepository;
 import com.aegis.identity.infrastructure.security.oauth.OAuthIdentityProviderRegistry;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -50,9 +51,13 @@ public class AuthenticateOAuthUserService {
       if (!user.isActive()) {
         throw new IllegalStateException("User account is inactive");
       }
+      if (!Boolean.TRUE.equals(user.getEmailVerified())) {
+        user.setEmailVerified(true);
+        userRepository.save(user);
+      }
 
       return OAuthAuthenticationResult.success(
-          createSessionService.issueTokensAndCreateSession(user));
+          createSessionService.issueTokensAndCreateSession(user, List.of("oauth")));
     }
 
     Optional<User> existingUserByEmail = userRepository.findByEmail(userInfo.email());

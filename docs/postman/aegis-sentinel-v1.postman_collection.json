@@ -22,6 +22,11 @@
 			"type": "string"
 		},
 		{
+			"key": "challengeId",
+			"value": "",
+			"type": "string"
+		},
+		{
 			"key": "orgId",
 			"value": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
 			"type": "string"
@@ -38,21 +43,6 @@
 			"item": [
 				{
 					"name": "Register Organization",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"if (pm.response.code === 201) {",
-									"    var jsonData = pm.response.json();",
-									"    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
-									"    pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -81,6 +71,64 @@
 					}
 				},
 				{
+					"name": "Verify Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"token\": \"raw-email-verification-token\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/aegis/v1/auth/verify-email",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"aegis",
+								"v1",
+								"auth",
+								"verify-email"
+							]
+						}
+					}
+				},
+				{
+					"name": "Resend Verification Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"admin@acme-cyber.cloud\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/aegis/v1/auth/resend-verification",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"aegis",
+								"v1",
+								"auth",
+								"resend-verification"
+							]
+						}
+					}
+				},
+				{
 					"name": "Login",
 					"event": [
 						{
@@ -89,8 +137,12 @@
 								"exec": [
 									"if (pm.response.code === 200) {",
 									"    var jsonData = pm.response.json();",
-									"    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
-									"    pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+									"    if (jsonData.status === 'MFA_REQUIRED') {",
+									"        pm.collectionVariables.set('challengeId', jsonData.challengeId);",
+									"    } else {",
+									"        pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+									"        pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+									"    }",
 									"}"
 								],
 								"type": "text/javascript"
@@ -120,6 +172,96 @@
 								"v1",
 								"auth",
 								"login"
+							]
+						}
+					}
+				},
+				{
+					"name": "MFA Verify Challenge",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"code\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/aegis/v1/auth/mfa/verify",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"aegis",
+								"v1",
+								"auth",
+								"mfa",
+								"verify"
+							]
+						}
+					}
+				},
+				{
+					"name": "MFA Verify Recovery Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set('accessToken', jsonData.accessToken);",
+									"    pm.collectionVariables.set('refreshToken', jsonData.refreshToken);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"challengeId\": \"{{challengeId}}\",\n  \"recoveryCode\": \"A8KD-92LX\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/aegis/v1/auth/mfa/recovery",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"aegis",
+								"v1",
+								"auth",
+								"mfa",
+								"recovery"
 							]
 						}
 					}
@@ -198,35 +340,6 @@
 					}
 				},
 				{
-					"name": "Link Account",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"email\": \"admin@acme-cyber.cloud\",\n  \"password\": \"P@ssw0rd2026!\",\n  \"providerSubject\": \"google-sub-123456789\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/aegis/v1/auth/link-account",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"aegis",
-								"v1",
-								"auth",
-								"link-account"
-							]
-						}
-					}
-				},
-				{
 					"name": "Get User Profile Context",
 					"event": [
 						{
@@ -278,10 +391,10 @@
 			]
 		},
 		{
-			"name": "RBAC & Multi-Tenancy",
+			"name": "MFA Management",
 			"item": [
 				{
-					"name": "Check Alert Read Authority",
+					"name": "Get MFA Status",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -296,7 +409,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/aegis/v1/rbac-test/alert-read",
+							"raw": "{{baseUrl}}/api/aegis/v1/auth/mfa/status",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -304,14 +417,15 @@
 								"api",
 								"aegis",
 								"v1",
-								"rbac-test",
-								"alert-read"
+								"auth",
+								"mfa",
+								"status"
 							]
 						}
 					}
 				},
 				{
-					"name": "Check Workflow Execute Authority",
+					"name": "Initiate MFA Setup",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -323,10 +437,10 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"url": {
-							"raw": "{{baseUrl}}/api/aegis/v1/rbac-test/workflow-execute",
+							"raw": "{{baseUrl}}/api/aegis/v1/auth/mfa/setup",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -334,14 +448,15 @@
 								"api",
 								"aegis",
 								"v1",
-								"rbac-test",
-								"workflow-execute"
+								"auth",
+								"mfa",
+								"setup"
 							]
 						}
 					}
 				},
 				{
-					"name": "Check Org Admin Role",
+					"name": "Confirm MFA Setup",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -353,45 +468,19 @@
 								}
 							]
 						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/aegis/v1/rbac-test/org-admin",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"aegis",
-								"v1",
-								"rbac-test",
-								"org-admin"
-							]
-						}
-					}
-				},
-				{
-					"name": "Tenant Organization Scoped Alerts",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{accessToken}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
+						"method": "POST",
 						"header": [
 							{
-								"key": "X-Organization-Id",
-								"value": "{{orgId}}"
+								"key": "Content-Type",
+								"value": "application/json"
 							}
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"123456\"\n}"
+						},
 						"url": {
-							"raw": "{{baseUrl}}/api/aegis/v1/rbac-test/orgs/{{orgId}}/alerts",
+							"raw": "{{baseUrl}}/api/aegis/v1/auth/mfa/verify-setup",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -399,16 +488,15 @@
 								"api",
 								"aegis",
 								"v1",
-								"rbac-test",
-								"orgs",
-								"{{orgId}}",
-								"alerts"
+								"auth",
+								"mfa",
+								"verify-setup"
 							]
 						}
 					}
 				},
 				{
-					"name": "Tenant Workspace Scoped Alerts",
+					"name": "Disable MFA",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -420,19 +508,19 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [
 							{
-								"key": "X-Organization-Id",
-								"value": "{{orgId}}"
-							},
-							{
-								"key": "X-Workspace-Id",
-								"value": "{{workspaceId}}"
+								"key": "Content-Type",
+								"value": "application/json"
 							}
 						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"password\": \"P@ssw0rd2026!\",\n  \"code\": \"123456\"\n}"
+						},
 						"url": {
-							"raw": "{{baseUrl}}/api/aegis/v1/rbac-test/orgs/{{orgId}}/workspaces/{{workspaceId}}/alerts",
+							"raw": "{{baseUrl}}/api/aegis/v1/auth/mfa/disable",
 							"host": [
 								"{{baseUrl}}"
 							],
@@ -440,12 +528,49 @@
 								"api",
 								"aegis",
 								"v1",
-								"rbac-test",
-								"orgs",
-								"{{orgId}}",
-								"workspaces",
-								"{{workspaceId}}",
-								"alerts"
+								"auth",
+								"mfa",
+								"disable"
+							]
+						}
+					}
+				},
+				{
+					"name": "Regenerate Recovery Codes",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"code\": \"123456\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/aegis/v1/auth/mfa/regenerate-recovery-codes",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"aegis",
+								"v1",
+								"auth",
+								"mfa",
+								"regenerate-recovery-codes"
 							]
 						}
 					}
