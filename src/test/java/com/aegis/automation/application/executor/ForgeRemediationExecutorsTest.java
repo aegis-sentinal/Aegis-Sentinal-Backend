@@ -96,4 +96,29 @@ class ForgeRemediationExecutorsTest {
     VerificationResult verifyResult = executor.verify(context);
     assertThat(verifyResult.verified()).isTrue();
   }
+
+  @Test
+  @DisplayName("AwsSecurityGroupIsolationExecutor revokes wide ingress rules and passes verification")
+  void sgExecutor_executeAndVerify() {
+    AwsSecurityGroupIsolationExecutor executor = new AwsSecurityGroupIsolationExecutor();
+    assertThat(executor.supports(ActionType.ISOLATE_SECURITY_GROUP)).isTrue();
+
+    RemediationContext context =
+        RemediationContext.builder()
+            .workflowRunId(UUID.randomUUID())
+            .organizationId(UUID.randomUUID())
+            .targetResource("sg-0a1b2c3d4e5f6789")
+            .actionType("ISOLATE_SECURITY_GROUP")
+            .executedBy("soc-analyst")
+            .parameters(Map.of())
+            .stateSnapshot(Map.of())
+            .build();
+
+    ExecutionResult execResult = executor.execute(context);
+    assertThat(execResult.success()).isTrue();
+    assertThat(execResult.summary()).contains("Successfully isolated security group");
+
+    VerificationResult verifyResult = executor.verify(context);
+    assertThat(verifyResult.verified()).isTrue();
+  }
 }

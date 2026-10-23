@@ -3,7 +3,6 @@ package com.aegis.intelligence.application.service;
 import com.aegis.intelligence.domain.entity.ThreatIndicator;
 import com.aegis.intelligence.infrastructure.persistence.jpa.ThreatIndicatorJpaRepository;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;

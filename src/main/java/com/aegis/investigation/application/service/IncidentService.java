@@ -23,7 +23,6 @@ import com.aegis.investigation.infrastructure.storage.MinioEvidenceStorageServic
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;

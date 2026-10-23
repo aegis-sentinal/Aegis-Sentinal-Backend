@@ -6,10 +6,8 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.aegis.detection.domain.entity.Alert;
-import com.aegis.detection.domain.entity.DetectionRule;
 import com.aegis.detection.domain.model.AlertSeverity;
 import com.aegis.detection.domain.model.CloudProvider;
-import com.aegis.detection.domain.model.RuleType;
 import com.aegis.identity.domain.entity.Organization;
 import com.aegis.investigation.domain.entity.Incident;
 import com.aegis.investigation.domain.model.IncidentStatus;
