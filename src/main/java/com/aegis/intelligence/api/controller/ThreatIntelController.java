@@ -5,6 +5,7 @@ import com.aegis.intelligence.api.dto.MitreTechniqueStatResponse;
 import com.aegis.intelligence.api.dto.ThreatIndicatorResponse;
 import com.aegis.intelligence.api.dto.ThreatLookupRequest;
 import com.aegis.intelligence.api.dto.ThreatLookupResponse;
+import com.aegis.intelligence.application.service.ThreatFeedIngestionService;
 import com.aegis.intelligence.application.service.ThreatIntelService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -40,6 +41,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ThreatIntelController {
 
   private final ThreatIntelService threatIntelService;
+  private final ThreatFeedIngestionService feedIngestionService;
 
   @Operation(
       summary = "Query threat intelligence feeds",
@@ -93,5 +95,14 @@ public class ThreatIntelController {
   @PreAuthorize("hasAuthority('alert:read')")
   public List<MitreTechniqueStatResponse> getMitreStatistics() {
     return threatIntelService.getMitreStats();
+  }
+
+  @Operation(
+      summary = "Synchronize OSINT threat feeds",
+      description = "Synchronizes indicators from CISA KEV, AlienVault OTX, and Tor exit nodes.")
+  @PostMapping("/sync")
+  @PreAuthorize("hasAuthority('alert:write')")
+  public ThreatFeedIngestionService.FeedSyncResult syncThreatFeeds() {
+    return feedIngestionService.syncFeeds();
   }
 }

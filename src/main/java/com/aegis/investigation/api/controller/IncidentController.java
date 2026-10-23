@@ -135,6 +135,56 @@ public class IncidentController {
     return incidentService.addComment(id, orgId, request.message(), userId, "SOC Analyst");
   }
 
+  @Operation(
+      summary = "Upload forensic evidence artifact",
+      description = "Persists forensic artifact to MinIO evidence bucket with SHA-256 chain-of-custody hash.")
+  @PostMapping(value = "/{id}/evidence/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE)
+  @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize("hasAuthority('alert:write')")
+  public com.aegis.investigation.api.dto.EvidenceArtifactResponse uploadEvidence(
+      @PathVariable UUID id,
+      @RequestParam("file") org.springframework.web.multipart.MultipartFile file,
+      @RequestParam(value = "artifactType", defaultValue = "LOG_RECORD") String artifactType) throws java.io.IOException {
+    UUID orgId = resolveOrganizationId();
+    return incidentService.uploadEvidence(
+        id,
+        orgId,
+        file.getOriginalFilename(),
+        artifactType,
+        file.getContentType(),
+        file.getBytes(),
+        "SOC Forensic Analyst");
+  }
+
+  @Operation(
+      summary = "Download forensic evidence artifact",
+      description = "Retrieves raw binary or log artifact from MinIO object storage.")
+  @GetMapping("/{id}/evidence/{evidenceId}/download")
+  @PreAuthorize("hasAuthority('alert:read')")
+  public org.springframework.http.ResponseEntity<byte[]> downloadEvidence(
+      @PathVariable UUID id, @PathVariable UUID evidenceId) {
+    UUID orgId = resolveOrganizationId();
+    var download = incidentService.downloadEvidence(id, evidenceId, orgId);
+    return org.springframework.http.ResponseEntity.ok()
+        .header(
+            org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"" + download.filename() + "\"")
+        .contentType(org.springframework.http.MediaType.parseMediaType(
+            download.contentType() != null ? download.contentType() : "application/octet-stream"))
+        .body(download.data());
+  }
+
+  @Operation(
+      summary = "Get aggregated incident timeline",
+      description = "Retrieves chronologically sorted unified timeline of alerts, notes, evidence and SOAR actions.")
+  @GetMapping("/{id}/timeline/aggregated")
+  @PreAuthorize("hasAuthority('alert:read')")
+  public java.util.List<com.aegis.investigation.api.dto.TimelineEventResponse> getAggregatedTimeline(
+      @PathVariable UUID id) {
+    UUID orgId = resolveOrganizationId();
+    return incidentService.getAggregatedTimeline(id, orgId);
+  }
+
   private UUID resolveOrganizationId() {
     TenantContext context = TenantContext.get();
     if (context == null || context.organizationId() == null) {

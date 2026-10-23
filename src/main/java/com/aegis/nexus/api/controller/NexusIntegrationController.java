@@ -40,6 +40,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class NexusIntegrationController {
 
   private final NexusIntegrationService nexusIntegrationService;
+  private final com.aegis.nexus.application.service.SiemForwardingService siemForwardingService;
 
   @Operation(
       summary = "List multi-cloud and third-party integration connectors",
@@ -97,6 +98,17 @@ public class NexusIntegrationController {
   public IntegrationConnectorResponse testConnection(@PathVariable String key) {
     UUID orgId = resolveOrganizationId();
     return nexusIntegrationService.testConnection(orgId, key);
+  }
+
+  @Operation(
+      summary = "Dispatch test event payload to external connector",
+      description = "Emits a test SIEM/webhook event to verify end-to-end delivery to Splunk, Elastic, Slack, or PagerDuty.")
+  @PostMapping("/{key}/test-dispatch")
+  @PreAuthorize("hasAuthority('org:manage')")
+  public com.aegis.nexus.infrastructure.dispatch.SplunkHecDispatcher.DispatchResult testDispatch(
+      @PathVariable String key) {
+    UUID orgId = resolveOrganizationId();
+    return siemForwardingService.testDispatch(orgId, key);
   }
 
   private UUID resolveOrganizationId() {

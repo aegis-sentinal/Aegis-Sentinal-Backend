@@ -3,6 +3,7 @@ package com.aegis.investigation.application.service;
 import com.aegis.common.exception.ResourceNotFoundException;
 import com.aegis.detection.domain.entity.Alert;
 import com.aegis.detection.domain.model.AlertSeverity;
+import com.aegis.investigation.api.dto.EvidenceArtifactResponse;
 import com.aegis.investigation.api.dto.IncidentCommentResponse;
 import com.aegis.investigation.api.dto.IncidentDetailResponse;
 import com.aegis.investigation.api.dto.IncidentResponse;
@@ -18,8 +19,12 @@ import com.aegis.investigation.infrastructure.persistence.jpa.IncidentCommentJpa
 import com.aegis.investigation.infrastructure.persistence.jpa.IncidentJpaRepository;
 import com.aegis.investigation.infrastructure.persistence.jpa.IncidentSpecification;
 import com.aegis.investigation.infrastructure.persistence.jpa.TimelineEventJpaRepository;
+import com.aegis.investigation.infrastructure.storage.MinioEvidenceStorageService;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,6 +43,8 @@ public class IncidentService {
   private final TimelineEventJpaRepository timelineEventRepository;
   private final EvidenceArtifactJpaRepository evidenceArtifactRepository;
   private final IncidentCommentJpaRepository commentRepository;
+  private final IncidentCorrelationEngine correlationEngine;
+  private final MinioEvidenceStorageService minioStorageService;
 
   @Transactional(readOnly = true)
   public Page<IncidentResponse> getIncidents(
@@ -147,48 +154,104 @@ public class IncidentService {
 
   @Transactional
   public Incident correlateAlertIntoIncident(Alert alert) {
-    // Group into an active incident or create a new case
+    return correlationEngine.correlateAlert(alert);
+  }
+
+  public record EvidenceDownload(
+      String filename,
+      String contentType,
+      byte[] data
+  ) {}
+
+  @Transactional
+  public EvidenceArtifactResponse uploadEvidence(
+      UUID incidentId,
+      UUID organizationId,
+      String filename,
+      String artifactTypeStr,
+      String contentType,
+      byte[] data,
+      String authorName) {
     Incident incident =
-        Incident.builder()
-            .organization(alert.getOrganization())
-            .workspace(alert.getWorkspace())
-            .title("Security Incident: " + alert.getTitle())
-            .summary(
-                "Aggregated security incident involving resource ["
-                    + alert.getResourceId()
-                    + "] detected by Sentinel Core.")
-            .severity(alert.getSeverity())
-            .status(IncidentStatus.NEW)
-            .riskScore(alert.getRiskScore())
-            .cloudProvider(alert.getCloudProvider())
-            .alerts(new HashSet<>())
-            .build();
+        incidentRepository
+            .findById(incidentId)
+            .filter(i -> i.getOrganization().getId().equals(organizationId))
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Incident not found with id: " + incidentId));
 
-    incident.getAlerts().add(alert);
+    ArtifactType type = ArtifactType.LOG_RECORD;
+    if (artifactTypeStr != null) {
+      try {
+        type = ArtifactType.valueOf(artifactTypeStr.toUpperCase());
+      } catch (Exception ignored) {}
+    }
 
-    TimelineEvent alertTriggered =
-        TimelineEvent.builder()
-            .incident(incident)
-            .eventType(TimelineEventType.ALERT_TRIGGERED)
-            .title(alert.getTitle())
-            .description(alert.getDescription())
-            .source(alert.getResourceType() + " (" + alert.getResourceId() + ")")
-            .build();
+    var uploadResult = minioStorageService.storeEvidence(incidentId, filename, contentType, data);
+
+    String rawPreview = data != null && data.length < 50000
+        ? new String(data, StandardCharsets.UTF_8)
+        : "[Binary artifact stored in MinIO: " + uploadResult.storageUri() + "]";
 
     EvidenceArtifact artifact =
         EvidenceArtifact.builder()
             .incident(incident)
-            .name("Alert Telemetry Artifact #" + alert.getId())
-            .artifactType(ArtifactType.LOG_RECORD)
-            .contentType("application/json")
-            .rawData(alert.getDescription())
+            .name(filename != null ? filename : "forensic-evidence.bin")
+            .artifactType(type)
+            .contentType(contentType != null ? contentType : "application/octet-stream")
+            .checksum(uploadResult.checksum())
+            .storageUri(uploadResult.storageUri())
+            .rawData(rawPreview)
             .build();
 
-    incident.getTimelineEvents().add(alertTriggered);
-    incident.getEvidenceArtifacts().add(artifact);
+    EvidenceArtifact savedArtifact = evidenceArtifactRepository.save(artifact);
 
-    Incident saved = incidentRepository.save(incident);
-    log.info("Correlated alert {} into incident {}", alert.getId(), saved.getId());
-    return saved;
+    TimelineEvent event =
+        TimelineEvent.builder()
+            .incident(incident)
+            .eventType(TimelineEventType.EVIDENCE_COLLECTED)
+            .title("Forensic Evidence Uploaded: " + artifact.getName())
+            .description("Artifact SHA-256: " + uploadResult.checksum() + " (" + (data != null ? data.length : 0) + " bytes)")
+            .source(authorName != null ? authorName : "forensics")
+            .build();
+    timelineEventRepository.save(event);
+
+    return EvidenceArtifactResponse.fromEntity(savedArtifact);
+  }
+
+  @Transactional(readOnly = true)
+  public EvidenceDownload downloadEvidence(UUID incidentId, UUID evidenceId, UUID organizationId) {
+    Incident incident =
+        incidentRepository
+            .findById(incidentId)
+            .filter(i -> i.getOrganization().getId().equals(organizationId))
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Incident not found with id: " + incidentId));
+
+    EvidenceArtifact artifact =
+        evidenceArtifactRepository
+            .findById(evidenceId)
+            .filter(a -> a.getIncident().getId().equals(incident.getId()))
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Evidence artifact not found: " + evidenceId));
+
+    byte[] bytes = minioStorageService.retrieveEvidence(artifact.getStorageUri());
+    return new EvidenceDownload(artifact.getName(), artifact.getContentType(), bytes);
+  }
+
+  @Transactional(readOnly = true)
+  public List<com.aegis.investigation.api.dto.TimelineEventResponse> getAggregatedTimeline(
+      UUID incidentId, UUID organizationId) {
+    Incident incident =
+        incidentRepository
+            .findById(incidentId)
+            .filter(i -> i.getOrganization().getId().equals(organizationId))
+            .orElseThrow(
+                () -> new ResourceNotFoundException("Incident not found with id: " + incidentId));
+
+    return incident.getTimelineEvents() != null
+        ? incident.getTimelineEvents().stream()
+            .map(com.aegis.investigation.api.dto.TimelineEventResponse::fromEntity)
+            .toList()
+        : Collections.emptyList();
   }
 }

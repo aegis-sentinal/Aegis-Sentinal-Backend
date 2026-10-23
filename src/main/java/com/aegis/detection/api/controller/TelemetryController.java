@@ -69,4 +69,34 @@ public class TelemetryController {
 
     return telemetryIngestionService.ingest(request, orgId, wsId);
   }
+
+  @Operation(
+      summary = "Ingest Azure Activity Logs & Entra ID telemetry",
+      description = "Parses and normalizes Azure Monitor Activity Logs, evaluating them against Azure detection rules.")
+  @PostMapping("/azure")
+  @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize("hasAuthority('alert:write')")
+  public java.util.List<TelemetryIngestResponse> ingestAzureTelemetry(
+      @RequestBody java.util.Map<String, Object> payload) {
+    TenantContext context = TenantContext.get();
+    if (context == null || context.organizationId() == null) {
+      throw new BadRequestException("Organization tenant context required for telemetry ingestion.");
+    }
+    return telemetryIngestionService.ingestAzure(payload, context.organizationId(), context.workspaceId());
+  }
+
+  @Operation(
+      summary = "Ingest GCP Cloud Audit Logs & Pub/Sub telemetry",
+      description = "Parses and normalizes GCP Cloud Audit Logs, evaluating them against GCP detection rules.")
+  @PostMapping("/gcp")
+  @ResponseStatus(HttpStatus.CREATED)
+  @PreAuthorize("hasAuthority('alert:write')")
+  public java.util.List<TelemetryIngestResponse> ingestGcpTelemetry(
+      @RequestBody java.util.Map<String, Object> payload) {
+    TenantContext context = TenantContext.get();
+    if (context == null || context.organizationId() == null) {
+      throw new BadRequestException("Organization tenant context required for telemetry ingestion.");
+    }
+    return telemetryIngestionService.ingestGcp(payload, context.organizationId(), context.workspaceId());
+  }
 }
