@@ -19,6 +19,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -69,6 +71,22 @@ public class AuditLogController {
     UUID orgId = resolveOrganizationId();
     Pageable pageable = PageRequest.of(page, limit, Sort.by(Sort.Direction.DESC, "timestamp"));
     return auditLogService.getAuditLogs(orgId, actor, action, result, pageable);
+  }
+
+  @Operation(
+      summary = "Export immutable audit logs as CSV",
+      description =
+          "Downloads the full tenant audit trail in CSV format with SHA-256 chain hashes for compliance audits (SOC 2, ISO 27001).")
+  @GetMapping(value = "/export", produces = "text/csv")
+  @PreAuthorize("hasAnyAuthority('audit:read', 'org:manage')")
+  public ResponseEntity<String> exportAuditLogs() {
+    UUID orgId = resolveOrganizationId();
+    String csv = auditLogService.exportAuditLogsToCsv(orgId);
+    return ResponseEntity.ok()
+        .header(
+            HttpHeaders.CONTENT_DISPOSITION,
+            "attachment; filename=\"aegis-audit-logs-" + orgId + ".csv\"")
+        .body(csv);
   }
 
   private UUID resolveOrganizationId() {

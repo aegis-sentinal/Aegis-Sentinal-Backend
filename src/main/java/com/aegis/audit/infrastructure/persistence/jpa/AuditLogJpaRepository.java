@@ -1,6 +1,7 @@
 package com.aegis.audit.infrastructure.persistence.jpa;
 
 import com.aegis.audit.domain.entity.AuditLog;
+import java.util.List;
 import java.util.UUID;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,4 +24,6 @@ public interface AuditLogJpaRepository extends JpaRepository<AuditLog, UUID> {
       @Param("action") String action,
       @Param("result") String result,
       Pageable pageable);
+
+  List<AuditLog> findAllByOrganizationIdOrderByTimestampDesc(UUID organizationId);
 }

@@ -11,6 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
+import java.util.List;
 import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -75,6 +76,33 @@ public class AuditLogService {
             .build();
 
     return auditLogRepository.save(entry);
+  }
+
+  @Transactional(readOnly = true)
+  public String exportAuditLogsToCsv(UUID organizationId) {
+    List<AuditLog> logs = auditLogRepository.findAllByOrganizationIdOrderByTimestampDesc(organizationId);
+    StringBuilder sb = new StringBuilder();
+    sb.append("id,timestamp,actor,action,resource,resourceType,result,ipAddress,digestHash,details\n");
+
+    for (AuditLog l : logs) {
+      sb.append(escapeCsv(l.getId() != null ? l.getId().toString() : "")).append(",");
+      sb.append(escapeCsv(l.getTimestamp() != null ? l.getTimestamp().toString() : "")).append(",");
+      sb.append(escapeCsv(l.getActor())).append(",");
+      sb.append(escapeCsv(l.getAction())).append(",");
+      sb.append(escapeCsv(l.getResource())).append(",");
+      sb.append(escapeCsv(l.getResourceType())).append(",");
+      sb.append(escapeCsv(l.getResult())).append(",");
+      sb.append(escapeCsv(l.getIpAddress())).append(",");
+      sb.append(escapeCsv(l.getDigestHash())).append(",");
+      sb.append(escapeCsv(l.getDetails())).append("\n");
+    }
+    return sb.toString();
+  }
+
+  private String escapeCsv(String val) {
+    if (val == null) return "\"\"";
+    String escaped = val.replace("\"", "\"\"");
+    return "\"" + escaped + "\"";
   }
 
   private String computeSha256(String input) {

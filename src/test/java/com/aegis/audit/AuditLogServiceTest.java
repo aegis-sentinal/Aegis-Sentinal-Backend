@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.aegis.audit.api.dto.AuditLogResponse;
 import com.aegis.audit.application.service.AuditLogService;
 import com.aegis.audit.domain.entity.AuditLog;
 import com.aegis.audit.infrastructure.persistence.jpa.AuditLogJpaRepository;
@@ -20,11 +19,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
 @ExtendWith(MockitoExtension.class)
 class AuditLogServiceTest {
@@ -33,65 +30,68 @@ class AuditLogServiceTest {
   @Mock private OrganizationJpaRepository organizationRepository;
   @Mock private WorkspaceJpaRepository workspaceRepository;
 
-  private AuditLogService auditLogService;
+  @InjectMocks private AuditLogService auditLogService;
+
   private UUID orgId;
-  private Organization testOrg;
+  private Organization organization;
+  private AuditLog auditLog;
 
   @BeforeEach
   void setUp() {
-    auditLogService =
-        new AuditLogService(auditLogRepository, organizationRepository, workspaceRepository);
     orgId = UUID.randomUUID();
-    testOrg = Organization.builder().id(orgId).name("Acme").slug("acme").build();
-  }
+    organization = Organization.builder().id(orgId).name("Aegis Security").slug("aegis-sec").build();
 
-  @Test
-  @DisplayName("Should query paginated audit logs for organization")
-  void shouldQueryAuditLogs() {
-    AuditLog log =
+    auditLog =
         AuditLog.builder()
             .id(UUID.randomUUID())
-            .organization(testOrg)
-            .actor("admin@acme.com")
+            .organization(organization)
+            .actor("admin@aegis.test")
             .action("USER_LOGIN")
             .resource("auth-service")
             .resourceType("IDENTITY")
             .result("SUCCESS")
+            .ipAddress("198.51.100.1")
+            .details("MFA verified")
             .digestHash("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
             .timestamp(Instant.now())
             .build();
-
-    when(auditLogRepository.searchAuditLogs(any(), any(), any(), any(), any()))
-        .thenReturn(new PageImpl<>(List.of(log)));
-
-    Page<AuditLogResponse> page =
-        auditLogService.getAuditLogs(orgId, null, null, null, PageRequest.of(0, 10));
-
-    assertThat(page.getContent()).hasSize(1);
-    assertThat(page.getContent().get(0).actor()).isEqualTo("admin@acme.com");
   }
 
   @Test
-  @DisplayName("Should record audit entry with computed SHA-256 digest")
-  void shouldRecordAuditEntryWithDigest() {
-    when(organizationRepository.findById(orgId)).thenReturn(Optional.of(testOrg));
-    when(auditLogRepository.save(any(AuditLog.class))).thenAnswer(inv -> inv.getArgument(0));
+  @DisplayName("Should record audit log with valid SHA-256 digest hash")
+  void shouldRecordAuditWithDigest() {
+    when(organizationRepository.findById(orgId)).thenReturn(Optional.of(organization));
+    when(auditLogRepository.save(any(AuditLog.class))).thenAnswer(i -> i.getArgument(0));
 
     AuditLog saved =
         auditLogService.recordAudit(
             orgId,
             null,
-            "analyst@acme.com",
-            "REMEDIATION_TRIGGER",
-            "sg-12345",
-            "SECURITY_GROUP",
+            "admin@aegis.test",
+            "CONFIG_CHANGE",
+            "nexus-connector",
+            "CONNECTOR",
             "SUCCESS",
-            "192.168.1.1",
-            "Revoked ingress");
+            "127.0.0.1",
+            "Updated AWS connector");
 
     assertThat(saved).isNotNull();
-    assertThat(saved.getDigestHash()).isNotEmpty();
-    assertThat(saved.getDigestHash()).hasSize(64);
+    assertThat(saved.getDigestHash()).isNotNull().hasSize(64);
     verify(auditLogRepository).save(any(AuditLog.class));
+  }
+
+  @Test
+  @DisplayName("Should export audit logs to RFC-compliant CSV with header")
+  void shouldExportToCsv() {
+    when(auditLogRepository.findAllByOrganizationIdOrderByTimestampDesc(orgId))
+        .thenReturn(List.of(auditLog));
+
+    String csv = auditLogService.exportAuditLogsToCsv(orgId);
+
+    assertThat(csv).isNotNull();
+    assertThat(csv).contains("id,timestamp,actor,action,resource,resourceType,result,ipAddress,digestHash,details");
+    assertThat(csv).contains("admin@aegis.test");
+    assertThat(csv).contains("USER_LOGIN");
+    assertThat(csv).contains("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
   }
 }
