@@ -55,3 +55,9 @@ springdoc:
     operations-sorter: alpha
     tags-sorter: alpha
 
+aegis:
+  ai:
+    gemini-api-key: ${GEMINI_API_KEY:}
+    openai-api-key: ${OPENAI_API_KEY:}
+
+

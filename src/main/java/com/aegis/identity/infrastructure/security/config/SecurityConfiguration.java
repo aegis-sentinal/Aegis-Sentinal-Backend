@@ -132,7 +132,9 @@ public class SecurityConfiguration {
                         "/api/aegis/v1/auth/verify-email",
                         "/api/aegis/v1/auth/resend-verification",
                         "/api/aegis/v1/auth/mfa/verify",
-                        "/api/aegis/v1/auth/mfa/recovery")
+                        "/api/aegis/v1/auth/mfa/recovery",
+                        "/api/aegis/v1/telemetry/analyze",
+                        "/api/aegis/v1/oracle/chat")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

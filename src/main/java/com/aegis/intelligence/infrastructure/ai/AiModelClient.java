@@ -30,10 +30,7 @@ public class AiModelClient {
     this.geminiApiKey = geminiApiKey != null ? geminiApiKey.trim() : "";
     this.openaiApiKey = openaiApiKey != null ? openaiApiKey.trim() : "";
     this.objectMapper = objectMapper;
-    this.httpClient =
-        HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
+    this.httpClient = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build();
   }
 
   public boolean isConfigured() {
@@ -124,10 +121,7 @@ public class AiModelClient {
     Map<String, String> userMsg = Map.of("role", "user", "content", userPrompt);
 
     Map<String, Object> payload =
-        Map.of(
-            "model", "gpt-4o-mini",
-            "messages", List.of(sysMsg, userMsg),
-            "temperature", 0.2);
+        Map.of("model", "gpt-4o-mini", "messages", List.of(sysMsg, userMsg), "temperature", 0.2);
 
     String requestJson = objectMapper.writeValueAsString(payload);
 

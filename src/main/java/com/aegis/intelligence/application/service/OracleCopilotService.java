@@ -4,8 +4,12 @@ import com.aegis.detection.domain.entity.Alert;
 import com.aegis.detection.infrastructure.persistence.jpa.AlertJpaRepository;
 import com.aegis.intelligence.api.dto.OracleChatRequest;
 import com.aegis.intelligence.api.dto.OracleChatResponse;
+import com.aegis.intelligence.infrastructure.ai.AiModelClient;
 import com.aegis.investigation.domain.entity.Incident;
 import com.aegis.investigation.infrastructure.persistence.jpa.IncidentJpaRepository;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +24,8 @@ public class OracleCopilotService {
 
   private final AlertJpaRepository alertRepository;
   private final IncidentJpaRepository incidentRepository;
+  private final AiModelClient aiModelClient;
+  private final ObjectMapper objectMapper;
 
   @Transactional(readOnly = true)
   public OracleChatResponse chat(OracleChatRequest request) {
@@ -34,6 +40,15 @@ public class OracleCopilotService {
         request.incidentId() != null
             ? incidentRepository.findById(request.incidentId())
             : Optional.empty();
+
+    // If an external AI API key (Gemini / OpenAI) is configured, leverage live model reasoning
+    if (aiModelClient.isConfigured()) {
+      Optional<OracleChatResponse> aiRes =
+          tryLiveAiChat(request, alertOpt.orElse(null), incidentOpt.orElse(null));
+      if (aiRes.isPresent()) {
+        return aiRes.get();
+      }
+    }
 
     if (alertOpt.isPresent()) {
       Alert alert = alertOpt.get();
@@ -149,5 +164,103 @@ public class OracleCopilotService {
         "# Incident Blast-Radius Containment Script\n"
             + "aws iam attach-user-policy --user-name compromised-user --policy-arn arn:aws:iam::aws:policy/AWSDenyAll",
         true);
+  }
+
+  private Optional<OracleChatResponse> tryLiveAiChat(
+      OracleChatRequest request, Alert alert, Incident incident) {
+    try {
+      StringBuilder contextBuilder = new StringBuilder();
+      contextBuilder.append("User Prompt: ").append(request.prompt()).append("\n");
+      if (alert != null) {
+        contextBuilder
+            .append("Alert Context: [")
+            .append(alert.getTitle())
+            .append(", Severity: ")
+            .append(alert.getSeverity())
+            .append(", Resource: ")
+            .append(alert.getResourceId())
+            .append("]\n");
+      }
+      if (incident != null) {
+        contextBuilder
+            .append("Incident Context: [")
+            .append(incident.getTitle())
+            .append(", Severity: ")
+            .append(incident.getSeverity())
+            .append("]\n");
+      }
+
+      String systemPrompt =
+          """
+          You are Oracle, the AI Security Copilot of Aegis Sentinel (Enterprise Cloud Incident Detection and Response Platform).
+          You synthesize 7 security engines:
+          1. Sentinel Core (184 SIGMA detection rules, 35 Helios ML models)
+          2. Forge SOAR (OWASP Cloud & API Top 10 automated remediation playbooks)
+          3. Pulse (real-time telemetry stream at 4,250 events/sec)
+          4. Watchtower (IoC threat intelligence, AlienVault OTX, MITRE ATT&CK v14)
+          5. Prism (attack graph, blast radius, lateral movement)
+          6. Nexus (22 multi-cloud connectors for AWS, Azure, GCP, K8s, Okta)
+          7. Vault (cryptographic audit-ready incident cases)
+
+          Respond with pure, valid JSON (no markdown formatting, no code blocks, no backticks) using this exact schema:
+          {
+            "response": "Detailed analytical answer synthesizing relevant engines and findings",
+            "module_tag": "ENGINE NAME (e.g. SENTINEL CORE + FORGE SOAR)",
+            "severity": "CRITICAL" | "HIGH" | "MEDIUM" | "LOW" | "INFO",
+            "attack_stage": "initial_access" | "priv_esc" | "collection" | "exfiltration" | "impact" | "recon",
+            "mitre_techniques": ["T1078", "T1530"],
+            "recommended_actions": ["action 1", "action 2"],
+            "code_snippet": "CLI command or remediation code script (if relevant, else empty string)",
+            "escalate_to_human": boolean
+          }
+          """;
+
+      Optional<String> aiRaw = aiModelClient.generate(systemPrompt, contextBuilder.toString());
+      if (aiRaw.isEmpty()) {
+        return Optional.empty();
+      }
+
+      String cleanJson = aiRaw.get().trim();
+      if (cleanJson.startsWith("```json")) {
+        cleanJson = cleanJson.substring(7);
+      } else if (cleanJson.startsWith("```")) {
+        cleanJson = cleanJson.substring(3);
+      }
+      if (cleanJson.endsWith("```")) {
+        cleanJson = cleanJson.substring(0, cleanJson.length() - 3);
+      }
+      cleanJson = cleanJson.trim();
+
+      JsonNode node = objectMapper.readTree(cleanJson);
+      String response = node.path("response").asText();
+      String moduleTag = node.path("module_tag").asText("ORACLE & SENTINEL CORE");
+      String severity = node.path("severity").asText("HIGH");
+      String attackStage = node.path("attack_stage").asText("recon");
+      String codeSnippet = node.path("code_snippet").asText("");
+      boolean escalate = node.path("escalate_to_human").asBoolean(false);
+
+      List<String> mitre = new ArrayList<>();
+      if (node.has("mitre_techniques") && node.get("mitre_techniques").isArray()) {
+        node.get("mitre_techniques").forEach(m -> mitre.add(m.asText()));
+      }
+      if (mitre.isEmpty()) {
+        mitre.add("T1078");
+      }
+
+      List<String> actions = new ArrayList<>();
+      if (node.has("recommended_actions") && node.get("recommended_actions").isArray()) {
+        node.get("recommended_actions").forEach(a -> actions.add(a.asText()));
+      }
+      if (actions.isEmpty()) {
+        actions.add("monitor");
+      }
+
+      return Optional.of(
+          new OracleChatResponse(
+              response, moduleTag, severity, attackStage, mitre, actions, codeSnippet, escalate));
+    } catch (Exception e) {
+      log.warn("Oracle Live AI processing fallback: {}", e.getMessage());
+      return Optional.empty();
+    }
   }
 }
