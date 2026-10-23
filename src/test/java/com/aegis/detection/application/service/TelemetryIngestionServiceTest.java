@@ -42,7 +42,11 @@ class TelemetryIngestionServiceTest {
   @Mock private com.aegis.investigation.application.service.IncidentService incidentService;
   @Mock private com.aegis.detection.application.parser.AzureActivityLogParser azureParser;
   @Mock private com.aegis.detection.application.parser.GcpCloudAuditLogParser gcpParser;
-  @Mock private com.aegis.intelligence.infrastructure.persistence.jpa.ThreatIndicatorJpaRepository threatIndicatorRepository;
+
+  @Mock
+  private com.aegis.intelligence.infrastructure.persistence.jpa.ThreatIndicatorJpaRepository
+      threatIndicatorRepository;
+
   @Mock private com.aegis.nexus.application.service.SiemForwardingService siemForwardingService;
 
   private TelemetryIngestionService ingestionService;

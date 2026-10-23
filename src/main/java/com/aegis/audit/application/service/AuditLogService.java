@@ -80,9 +80,11 @@ public class AuditLogService {
 
   @Transactional(readOnly = true)
   public String exportAuditLogsToCsv(UUID organizationId) {
-    List<AuditLog> logs = auditLogRepository.findAllByOrganizationIdOrderByTimestampDesc(organizationId);
+    List<AuditLog> logs =
+        auditLogRepository.findAllByOrganizationIdOrderByTimestampDesc(organizationId);
     StringBuilder sb = new StringBuilder();
-    sb.append("id,timestamp,actor,action,resource,resourceType,result,ipAddress,digestHash,details\n");
+    sb.append(
+        "id,timestamp,actor,action,resource,resourceType,result,ipAddress,digestHash,details\n");
 
     for (AuditLog l : logs) {
       sb.append(escapeCsv(l.getId() != null ? l.getId().toString() : "")).append(",");
@@ -100,7 +102,9 @@ public class AuditLogService {
   }
 
   private String escapeCsv(String val) {
-    if (val == null) return "\"\"";
+    if (val == null) {
+      return "\"\"";
+    }
     String escaped = val.replace("\"", "\"\"");
     return "\"" + escaped + "\"";
   }

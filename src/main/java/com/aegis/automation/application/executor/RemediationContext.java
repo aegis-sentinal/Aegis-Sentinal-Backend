@@ -12,5 +12,4 @@ public record RemediationContext(
     String actionType,
     String executedBy,
     Map<String, Object> parameters,
-    Map<String, Object> stateSnapshot
-) {}
+    Map<String, Object> stateSnapshot) {}

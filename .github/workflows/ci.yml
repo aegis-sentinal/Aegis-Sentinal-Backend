@@ -20,7 +20,17 @@ jobs:
         ports:
           - 5433:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U aegis -d aegis"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6380:6379
+        options: >-
+          --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -47,6 +57,10 @@ jobs:
         run: chmod +x gradlew
 
       - name: Run Clean & Test Suite with JaCoCo Coverage
+        env:
+          AEGIS_JWT_SECRET: dGhpcy1pcy1hLXZlcnktc2VjdXJlLWRldmVsb3BtZW50LWp3dC1zZWNyZXQta2V5LTMyLWJ5dGVzLW1pbg==
+          GOOGLE_CLIENT_ID: mock-google-client-id
+          GOOGLE_CLIENT_SECRET: mock-google-client-secret
         run: ./gradlew clean test jacocoTestReport
 
       - name: Upload JaCoCo Coverage Report

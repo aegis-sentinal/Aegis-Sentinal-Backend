@@ -57,15 +57,20 @@ public class AzureActivityLogParser {
     }
 
     String resourceId = node.path("resourceId").asText(null);
-    String caller = node.path("caller").asText(node.path("claims").path("name").asText("unknown-principal"));
-    String clientIp = node.path("httpRequest").path("clientIpAddress").asText(node.path("callerIp").asText(null));
+    String caller =
+        node.path("caller").asText(node.path("claims").path("name").asText("unknown-principal"));
+    String clientIp =
+        node.path("httpRequest").path("clientIpAddress").asText(node.path("callerIp").asText(null));
     String correlationId = node.path("correlationId").asText(UUID.randomUUID().toString());
 
     String eventSource = "Microsoft.Azure";
     if (resourceId != null && resourceId.contains("/providers/")) {
       int idx = resourceId.indexOf("/providers/");
       int nextSlash = resourceId.indexOf('/', idx + 11);
-      eventSource = nextSlash > 0 ? resourceId.substring(idx + 11, nextSlash) : resourceId.substring(idx + 11);
+      eventSource =
+          nextSlash > 0
+              ? resourceId.substring(idx + 11, nextSlash)
+              : resourceId.substring(idx + 11);
     } else if (operationName.contains("/")) {
       eventSource = operationName.substring(0, operationName.indexOf('/'));
     }
@@ -81,7 +86,6 @@ public class AzureActivityLogParser {
         clientIp,
         resourceId != null ? resourceId : "/subscriptions/azure-default",
         "azure",
-        rawMap
-    );
+        rawMap);
   }
 }

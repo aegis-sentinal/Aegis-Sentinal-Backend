@@ -31,7 +31,12 @@ public class KubernetesQuarantineExecutor implements RemediationActionExecutor {
     log.info("Executing compute workload / container isolation on target: {}", workload);
 
     StringBuilder logBuilder = new StringBuilder();
-    logBuilder.append("[").append(Instant.now()).append("] Isolating target compute resource: ").append(workload).append("\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Isolating target compute resource: ")
+        .append(workload)
+        .append("\n");
 
     Map<String, Object> state = new HashMap<>();
     state.put("workloadId", workload);
@@ -39,15 +44,25 @@ public class KubernetesQuarantineExecutor implements RemediationActionExecutor {
     state.put("ebsSnapshotId", "snap-0a9b8c7d6e5f4321");
     state.put("networkPolicyIsolation", "deny-all-ingress-egress");
 
-    logBuilder.append("[").append(Instant.now()).append("] Triggered EBS forensic snapshot: snap-0a9b8c7d6e5f4321.\n");
-    logBuilder.append("[").append(Instant.now()).append("] Applied NetworkPolicy deny-all-ingress-egress.\n");
-    logBuilder.append("[").append(Instant.now()).append("] Detached public IP addresses from workload interface.\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Triggered EBS forensic snapshot: snap-0a9b8c7d6e5f4321.\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Applied NetworkPolicy deny-all-ingress-egress.\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Detached public IP addresses from workload interface.\n");
 
     return ExecutionResult.successful(
-        "Successfully isolated workload " + workload + "; snapshot taken and network traffic severed.",
+        "Successfully isolated workload "
+            + workload
+            + "; snapshot taken and network traffic severed.",
         logBuilder.toString(),
-        state
-    );
+        state);
   }
 
   @Override
@@ -62,10 +77,11 @@ public class KubernetesQuarantineExecutor implements RemediationActionExecutor {
     observed.put("probeTimestamp", Instant.now().toString());
 
     return VerificationResult.passed(
-        "VERIFIED: Workload " + workload + " has no public IP interface and is contained by isolation security group.",
+        "VERIFIED: Workload "
+            + workload
+            + " has no public IP interface and is contained by isolation security group.",
         "Verified via compute describe and NetworkPolicy query.",
-        observed
-    );
+        observed);
   }
 
   @Override
@@ -74,13 +90,17 @@ public class KubernetesQuarantineExecutor implements RemediationActionExecutor {
     log.warn("Rolling back workload isolation for: {}", workload);
 
     StringBuilder logBuilder = new StringBuilder();
-    logBuilder.append("[").append(Instant.now()).append("] Compensating rollback: Removing isolation policy for ").append(workload).append("\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Compensating rollback: Removing isolation policy for ")
+        .append(workload)
+        .append("\n");
     logBuilder.append("[").append(Instant.now()).append("] Re-attached original network policy.\n");
 
     return ExecutionResult.successful(
         "Compensating rollback complete: Restored network policy on " + workload,
         logBuilder.toString(),
-        Map.of("rolledBack", true, "timestamp", Instant.now().toString())
-    );
+        Map.of("rolledBack", true, "timestamp", Instant.now().toString()));
   }
 }

@@ -10,8 +10,7 @@ public record VerificationResult(
     String verificationProof,
     String details,
     Map<String, Object> observedState,
-    Instant timestamp
-) {
+    Instant timestamp) {
   public static VerificationResult passed(String proof, String details, Map<String, Object> state) {
     return VerificationResult.builder()
         .verified(true)
@@ -25,7 +24,8 @@ public record VerificationResult(
   public static VerificationResult failed(String reason, Map<String, Object> state) {
     return VerificationResult.builder()
         .verified(false)
-        .verificationProof("FAILED: Target resource state check did not meet remediation assertions.")
+        .verificationProof(
+            "FAILED: Target resource state check did not meet remediation assertions.")
         .details(reason)
         .observedState(state != null ? state : Map.of())
         .timestamp(Instant.now())

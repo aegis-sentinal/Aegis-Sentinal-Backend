@@ -27,21 +27,38 @@ public class AwsSecurityGroupIsolationExecutor implements RemediationActionExecu
     log.info("Executing Security Group ingress quarantine on: {}", sgId);
 
     StringBuilder logBuilder = new StringBuilder();
-    logBuilder.append("[").append(Instant.now()).append("] Snapshotting current ingress permissions for ").append(sgId).append("\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Snapshotting current ingress permissions for ")
+        .append(sgId)
+        .append("\n");
 
     Map<String, Object> state = new HashMap<>();
     state.put("securityGroupId", sgId);
-    state.put("revokedRules", List.of("tcp/22 from 0.0.0.0/0", "tcp/3389 from 0.0.0.0/0", "tcp/8080 from 0.0.0.0/0"));
+    state.put(
+        "revokedRules",
+        List.of("tcp/22 from 0.0.0.0/0", "tcp/3389 from 0.0.0.0/0", "tcp/8080 from 0.0.0.0/0"));
     state.put("appliedQuarantineTag", "Aegis-Isolation=Quarantined");
 
-    logBuilder.append("[").append(Instant.now()).append("] Revoked 0.0.0.0/0 ingress on ports 22, 3389, and 8080 via ec2:RevokeSecurityGroupIngress.\n");
-    logBuilder.append("[").append(Instant.now()).append("] Tagged security group ").append(sgId).append(" with Aegis-Isolation=Quarantined.\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append(
+            "] Revoked 0.0.0.0/0 ingress on ports 22, 3389, and 8080 via ec2:RevokeSecurityGroupIngress.\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Tagged security group ")
+        .append(sgId)
+        .append(" with Aegis-Isolation=Quarantined.\n");
 
     return ExecutionResult.successful(
-        "Successfully isolated security group " + sgId + "; revoked permissive 0.0.0.0/0 ingress rules.",
+        "Successfully isolated security group "
+            + sgId
+            + "; revoked permissive 0.0.0.0/0 ingress rules.",
         logBuilder.toString(),
-        state
-    );
+        state);
   }
 
   @Override
@@ -56,10 +73,11 @@ public class AwsSecurityGroupIsolationExecutor implements RemediationActionExecu
     observed.put("probeTimestamp", Instant.now().toString());
 
     return VerificationResult.passed(
-        "VERIFIED: Security group " + sgId + " has 0 permissive ingress rules exposed to 0.0.0.0/0.",
+        "VERIFIED: Security group "
+            + sgId
+            + " has 0 permissive ingress rules exposed to 0.0.0.0/0.",
         "Verified via ec2:DescribeSecurityGroups probe.",
-        observed
-    );
+        observed);
   }
 
   @Override
@@ -68,14 +86,21 @@ public class AwsSecurityGroupIsolationExecutor implements RemediationActionExecu
     log.warn("Rolling back Security Group ingress quarantine on: {}", sgId);
 
     StringBuilder logBuilder = new StringBuilder();
-    logBuilder.append("[").append(Instant.now()).append("] Initiating compensating rollback for ").append(sgId).append("\n");
-    logBuilder.append("[").append(Instant.now()).append("] Restored previous security group rules.\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Initiating compensating rollback for ")
+        .append(sgId)
+        .append("\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Restored previous security group rules.\n");
     logBuilder.append("[").append(Instant.now()).append("] Removed isolation quarantine tag.\n");
 
     return ExecutionResult.successful(
         "Compensating rollback complete: Restored original rules on " + sgId,
         logBuilder.toString(),
-        Map.of("rolledBack", true, "timestamp", Instant.now().toString())
-    );
+        Map.of("rolledBack", true, "timestamp", Instant.now().toString()));
   }
 }

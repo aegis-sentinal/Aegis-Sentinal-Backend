@@ -72,7 +72,8 @@ public class TelemetryController {
 
   @Operation(
       summary = "Ingest Azure Activity Logs & Entra ID telemetry",
-      description = "Parses and normalizes Azure Monitor Activity Logs, evaluating them against Azure detection rules.")
+      description =
+          "Parses and normalizes Azure Monitor Activity Logs, evaluating them against Azure detection rules.")
   @PostMapping("/azure")
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("hasAuthority('alert:write')")
@@ -80,14 +81,17 @@ public class TelemetryController {
       @RequestBody java.util.Map<String, Object> payload) {
     TenantContext context = TenantContext.get();
     if (context == null || context.organizationId() == null) {
-      throw new BadRequestException("Organization tenant context required for telemetry ingestion.");
+      throw new BadRequestException(
+          "Organization tenant context required for telemetry ingestion.");
     }
-    return telemetryIngestionService.ingestAzure(payload, context.organizationId(), context.workspaceId());
+    return telemetryIngestionService.ingestAzure(
+        payload, context.organizationId(), context.workspaceId());
   }
 
   @Operation(
       summary = "Ingest GCP Cloud Audit Logs & Pub/Sub telemetry",
-      description = "Parses and normalizes GCP Cloud Audit Logs, evaluating them against GCP detection rules.")
+      description =
+          "Parses and normalizes GCP Cloud Audit Logs, evaluating them against GCP detection rules.")
   @PostMapping("/gcp")
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("hasAuthority('alert:write')")
@@ -95,8 +99,10 @@ public class TelemetryController {
       @RequestBody java.util.Map<String, Object> payload) {
     TenantContext context = TenantContext.get();
     if (context == null || context.organizationId() == null) {
-      throw new BadRequestException("Organization tenant context required for telemetry ingestion.");
+      throw new BadRequestException(
+          "Organization tenant context required for telemetry ingestion.");
     }
-    return telemetryIngestionService.ingestGcp(payload, context.organizationId(), context.workspaceId());
+    return telemetryIngestionService.ingestGcp(
+        payload, context.organizationId(), context.workspaceId());
   }
 }

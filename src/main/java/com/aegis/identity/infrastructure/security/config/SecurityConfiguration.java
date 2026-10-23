@@ -115,7 +115,9 @@ public class SecurityConfiguration {
             authorize ->
                 authorize
                     .requestMatchers(
+                        "/actuator/health",
                         "/actuator/health/**",
+                        "/actuator/info",
                         "/oauth2/**",
                         "/login/**",
                         "/error",

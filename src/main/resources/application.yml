@@ -24,6 +24,9 @@ server:
     context-path: /
 
 management:
+  health:
+    redis:
+      enabled: false
   endpoints:
     web:
       exposure:

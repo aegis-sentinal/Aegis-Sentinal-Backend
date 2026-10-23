@@ -13,8 +13,8 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HexFormat;
 import java.util.HashSet;
+import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -72,7 +72,8 @@ public class IncidentCorrelationEngine {
       // Elevate severity if incoming alert is higher
       if (alert.getSeverity() == AlertSeverity.CRITICAL) {
         incident.setSeverity(AlertSeverity.CRITICAL);
-      } else if (alert.getSeverity() == AlertSeverity.HIGH && incident.getSeverity() != AlertSeverity.CRITICAL) {
+      } else if (alert.getSeverity() == AlertSeverity.HIGH
+          && incident.getSeverity() != AlertSeverity.CRITICAL) {
         incident.setSeverity(AlertSeverity.HIGH);
       }
 
@@ -110,7 +111,8 @@ public class IncidentCorrelationEngine {
     }
 
     // Otherwise create brand new incident
-    log.info("Creating new incident for alert [{}] on resource [{}]", alert.getId(), targetResource);
+    log.info(
+        "Creating new incident for alert [{}] on resource [{}]", alert.getId(), targetResource);
     Incident newIncident =
         Incident.builder()
             .organization(alert.getOrganization())
@@ -156,7 +158,8 @@ public class IncidentCorrelationEngine {
   }
 
   private boolean matchesIncidentScope(Incident incident, Alert alert) {
-    if (incident.getAlerts().stream().anyMatch(a -> a.getResourceId().equalsIgnoreCase(alert.getResourceId()))) {
+    if (incident.getAlerts().stream()
+        .anyMatch(a -> a.getResourceId().equalsIgnoreCase(alert.getResourceId()))) {
       return true;
     }
     return incident.getCloudProvider() == alert.getCloudProvider()

@@ -98,7 +98,8 @@ class ForgeRemediationExecutorsTest {
   }
 
   @Test
-  @DisplayName("AwsSecurityGroupIsolationExecutor revokes wide ingress rules and passes verification")
+  @DisplayName(
+      "AwsSecurityGroupIsolationExecutor revokes wide ingress rules and passes verification")
   void sgExecutor_executeAndVerify() {
     AwsSecurityGroupIsolationExecutor executor = new AwsSecurityGroupIsolationExecutor();
     assertThat(executor.supports(ActionType.ISOLATE_SECURITY_GROUP)).isTrue();

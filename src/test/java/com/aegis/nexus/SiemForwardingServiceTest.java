@@ -59,7 +59,8 @@ class SiemForwardingServiceTest {
   }
 
   @Test
-  @DisplayName("dispatchAlertToConnectedSiems forwards alert to connected Splunk and Slack instances")
+  @DisplayName(
+      "dispatchAlertToConnectedSiems forwards alert to connected Splunk and Slack instances")
   void dispatchAlert_forwardsToActiveConnectors() {
     IntegrationConnector splunkConn =
         IntegrationConnector.builder()
@@ -81,7 +82,8 @@ class SiemForwardingServiceTest {
             .status(IntegrationStatus.CONNECTED)
             .build();
 
-    when(connectorRepository.findAllByOrganizationId(orgId)).thenReturn(List.of(splunkConn, slackConn));
+    when(connectorRepository.findAllByOrganizationId(orgId))
+        .thenReturn(List.of(splunkConn, slackConn));
 
     when(splunkDispatcher.dispatch(any(Alert.class), anyString(), anyString()))
         .thenReturn(new SplunkHecDispatcher.DispatchResult(true, "OK", "24ms"));
@@ -120,7 +122,8 @@ class SiemForwardingServiceTest {
     when(connectorRepository.findByOrganizationIdAndConnectorKey(orgId, "splunk"))
         .thenReturn(Optional.of(connector));
     when(splunkDispatcher.dispatch(any(Alert.class), anyString(), anyString()))
-        .thenReturn(new SplunkHecDispatcher.DispatchResult(true, "Verification successful", "18ms"));
+        .thenReturn(
+            new SplunkHecDispatcher.DispatchResult(true, "Verification successful", "18ms"));
 
     SplunkHecDispatcher.DispatchResult result = forwardingService.testDispatch(orgId, "splunk");
 

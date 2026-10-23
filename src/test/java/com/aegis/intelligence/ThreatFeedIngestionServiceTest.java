@@ -48,7 +48,8 @@ class ThreatFeedIngestionServiceTest {
     when(threatIndicatorRepository.findByIndicatorIgnoreCase("198.51.100.42"))
         .thenReturn(Optional.of(existingIndicator));
 
-    when(threatIndicatorRepository.save(any(ThreatIndicator.class))).thenAnswer(i -> i.getArgument(0));
+    when(threatIndicatorRepository.save(any(ThreatIndicator.class)))
+        .thenAnswer(i -> i.getArgument(0));
 
     ThreatFeedIngestionService.FeedSyncResult result = feedService.syncFeeds();
 

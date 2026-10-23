@@ -22,7 +22,8 @@ public class MinioEvidenceStorageService {
   @Value("${aegis.storage.minio.bucket:evidence}")
   private String bucketName;
 
-  private final Path fallbackDir = Paths.get(System.getProperty("java.io.tmpdir"), "aegis-evidence-store");
+  private final Path fallbackDir =
+      Paths.get(System.getProperty("java.io.tmpdir"), "aegis-evidence-store");
 
   public MinioEvidenceStorageService() {
     try {
@@ -35,7 +36,10 @@ public class MinioEvidenceStorageService {
   public EvidenceUploadResult storeEvidence(
       UUID incidentId, String originalFilename, String contentType, byte[] data) {
     String checksum = computeSha256(data);
-    String sanitizedFilename = originalFilename != null ? originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_") : "evidence.bin";
+    String sanitizedFilename =
+        originalFilename != null
+            ? originalFilename.replaceAll("[^a-zA-Z0-9.-]", "_")
+            : "evidence.bin";
     String objectKey = incidentId + "/" + UUID.randomUUID() + "-" + sanitizedFilename;
     String storageUri = "s3://" + bucketName + "/" + objectKey;
 
@@ -63,7 +67,10 @@ public class MinioEvidenceStorageService {
     }
     String incidentId = parts[0];
     String filePattern = parts[1];
-    String filename = filePattern.contains("-") ? filePattern.substring(filePattern.indexOf("-") + 1) : filePattern;
+    String filename =
+        filePattern.contains("-")
+            ? filePattern.substring(filePattern.indexOf("-") + 1)
+            : filePattern;
 
     Path target = fallbackDir.resolve(incidentId).resolve(filename);
     if (Files.exists(target)) {
@@ -86,9 +93,5 @@ public class MinioEvidenceStorageService {
   }
 
   public record EvidenceUploadResult(
-      String storageUri,
-      String checksum,
-      long sizeBytes,
-      String contentType
-  ) {}
+      String storageUri, String checksum, long sizeBytes, String contentType) {}
 }

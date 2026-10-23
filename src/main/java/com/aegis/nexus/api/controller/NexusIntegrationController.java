@@ -102,7 +102,8 @@ public class NexusIntegrationController {
 
   @Operation(
       summary = "Dispatch test event payload to external connector",
-      description = "Emits a test SIEM/webhook event to verify end-to-end delivery to Splunk, Elastic, Slack, or PagerDuty.")
+      description =
+          "Emits a test SIEM/webhook event to verify end-to-end delivery to Splunk, Elastic, Slack, or PagerDuty.")
   @PostMapping("/{key}/test-dispatch")
   @PreAuthorize("hasAuthority('org:manage')")
   public com.aegis.nexus.infrastructure.dispatch.SplunkHecDispatcher.DispatchResult testDispatch(

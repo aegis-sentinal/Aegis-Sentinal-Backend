@@ -96,10 +96,12 @@ public class TelemetryIngestionService {
     // Check Watchtower Threat Intelligence feeds for IoC matches
     ThreatIndicator matchedIoC = null;
     if (request.sourceIp() != null) {
-      matchedIoC = threatIndicatorRepository.findByIndicatorIgnoreCase(request.sourceIp()).orElse(null);
+      matchedIoC =
+          threatIndicatorRepository.findByIndicatorIgnoreCase(request.sourceIp()).orElse(null);
     }
     if (matchedIoC == null && request.principalId() != null) {
-      matchedIoC = threatIndicatorRepository.findByIndicatorIgnoreCase(request.principalId()).orElse(null);
+      matchedIoC =
+          threatIndicatorRepository.findByIndicatorIgnoreCase(request.principalId()).orElse(null);
     }
 
     // Evaluate against active detection rules
@@ -155,7 +157,12 @@ public class TelemetryIngestionService {
       if (matchedIoC != null) {
         severity = AlertSeverity.CRITICAL;
         riskScore = Math.max(riskScore, 95);
-        description += " [CRITICAL WATCHTOWER MATCH: " + matchedIoC.getIndicator() + " (" + matchedIoC.getThreatDescription() + ")]";
+        description +=
+            " [CRITICAL WATCHTOWER MATCH: "
+                + matchedIoC.getIndicator()
+                + " ("
+                + matchedIoC.getThreatDescription()
+                + ")]";
       }
 
       Alert alert =
@@ -191,7 +198,10 @@ public class TelemetryIngestionService {
       try {
         siemForwardingService.dispatchAlertToConnectedSiems(savedAlert);
       } catch (Exception e) {
-        log.warn("Failed forwarding alert {} to connected SIEMs: {}", savedAlert.getId(), e.getMessage());
+        log.warn(
+            "Failed forwarding alert {} to connected SIEMs: {}",
+            savedAlert.getId(),
+            e.getMessage());
       }
 
       log.warn(
@@ -234,7 +244,8 @@ public class TelemetryIngestionService {
     return responses;
   }
 
-  private boolean matches(DetectionRule rule, TelemetryIngestRequest request, CloudProvider incomingProvider) {
+  private boolean matches(
+      DetectionRule rule, TelemetryIngestRequest request, CloudProvider incomingProvider) {
     if (rule.getCloudProvider() != null && incomingProvider != null) {
       if (rule.getCloudProvider() != incomingProvider) {
         return false;
