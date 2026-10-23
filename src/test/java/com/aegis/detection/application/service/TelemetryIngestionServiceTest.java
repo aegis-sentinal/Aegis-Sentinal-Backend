@@ -39,6 +39,7 @@ class TelemetryIngestionServiceTest {
   @Mock private AlertJpaRepository alertRepository;
   @Mock private OrganizationJpaRepository organizationRepository;
   @Mock private WorkspaceJpaRepository workspaceRepository;
+  @Mock private com.aegis.investigation.application.service.IncidentService incidentService;
 
   private TelemetryIngestionService ingestionService;
 
@@ -55,7 +56,8 @@ class TelemetryIngestionServiceTest {
             alertRepository,
             organizationRepository,
             workspaceRepository,
-            new ObjectMapper());
+            new ObjectMapper(),
+            incidentService);
 
     orgId = UUID.randomUUID();
     testOrg = Organization.builder().id(orgId).name("Acme Corp").slug("acme").build();

@@ -34,6 +34,7 @@ public class TelemetryIngestionService {
   private final OrganizationJpaRepository organizationRepository;
   private final WorkspaceJpaRepository workspaceRepository;
   private final ObjectMapper objectMapper;
+  private final com.aegis.investigation.application.service.IncidentService incidentService;
 
   @Transactional
   public TelemetryIngestResponse ingest(
@@ -129,6 +130,11 @@ public class TelemetryIngestionService {
 
       Alert savedAlert = alertRepository.save(alert);
       alertId = savedAlert.getId();
+      try {
+        incidentService.correlateAlertIntoIncident(savedAlert);
+      } catch (Exception e) {
+        log.warn("Failed to correlate alert {} into incident: {}", savedAlert.getId(), e.getMessage());
+      }
       log.warn(
           "🚨 SECURITY ALERT GENERATED [{}]: {} for org {}",
           savedAlert.getId(),
