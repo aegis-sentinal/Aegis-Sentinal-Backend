@@ -25,12 +25,18 @@ class OracleCopilotServiceTest {
 
   @Mock private AlertJpaRepository alertRepository;
   @Mock private IncidentJpaRepository incidentRepository;
+  @Mock private com.aegis.intelligence.infrastructure.ai.AiModelClient aiModelClient;
 
   private OracleCopilotService oracleCopilotService;
 
   @BeforeEach
   void setUp() {
-    oracleCopilotService = new OracleCopilotService(alertRepository, incidentRepository);
+    oracleCopilotService =
+        new OracleCopilotService(
+            alertRepository,
+            incidentRepository,
+            aiModelClient,
+            new com.fasterxml.jackson.databind.ObjectMapper());
   }
 
   @Test

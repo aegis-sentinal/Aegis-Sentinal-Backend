@@ -39,7 +39,8 @@ class AuditLogServiceTest {
   @BeforeEach
   void setUp() {
     orgId = UUID.randomUUID();
-    organization = Organization.builder().id(orgId).name("Aegis Security").slug("aegis-sec").build();
+    organization =
+        Organization.builder().id(orgId).name("Aegis Security").slug("aegis-sec").build();
 
     auditLog =
         AuditLog.builder()
@@ -89,7 +90,9 @@ class AuditLogServiceTest {
     String csv = auditLogService.exportAuditLogsToCsv(orgId);
 
     assertThat(csv).isNotNull();
-    assertThat(csv).contains("id,timestamp,actor,action,resource,resourceType,result,ipAddress,digestHash,details");
+    assertThat(csv)
+        .contains(
+            "id,timestamp,actor,action,resource,resourceType,result,ipAddress,digestHash,details");
     assertThat(csv).contains("admin@aegis.test");
     assertThat(csv).contains("USER_LOGIN");
     assertThat(csv).contains("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");

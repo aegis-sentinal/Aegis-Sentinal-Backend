@@ -51,9 +51,12 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-aegis_dev}
       SPRING_DATA_REDIS_HOST: redis
       SPRING_DATA_REDIS_PORT: 6379
-      AEGIS_JWT_SECRET: ${AEGIS_JWT_SECRET}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      AEGIS_JWT_SECRET: ${AEGIS_JWT_SECRET:-cBwveG1IIb15VfKcXp/7zodLWBunHD4P3C2vM2oWL5Lh04UwyAl2NJXMlTY3PNkd}
+      AEGIS_SECURITY_CORS_ALLOWED_ORIGINS: ${AEGIS_SECURITY_CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:5173,https://aegissentinal.sushantkumaryadav.com.np}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-mock-google-client-id}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-mock-google-client-secret}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     depends_on:
       postgres:
         condition: service_healthy

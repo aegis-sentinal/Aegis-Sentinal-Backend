@@ -73,7 +73,8 @@ class IncidentCorrelationEngineTest {
   }
 
   @Test
-  @DisplayName("Clusters alert into existing active incident on same resource within correlation window")
+  @DisplayName(
+      "Clusters alert into existing active incident on same resource within correlation window")
   void correlateAlert_clustersIntoExistingIncident() {
     Incident existingIncident =
         Incident.builder()

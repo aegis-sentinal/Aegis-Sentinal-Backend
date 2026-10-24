@@ -4,13 +4,13 @@ import com.aegis.automation.api.dto.ApprovalDecisionRequest;
 import com.aegis.automation.api.dto.ExecuteWorkflowRequest;
 import com.aegis.automation.api.dto.PlaybookResponse;
 import com.aegis.automation.api.dto.WorkflowResponse;
-import com.aegis.automation.domain.entity.Playbook;
-import com.aegis.automation.domain.entity.WorkflowApproval;
-import com.aegis.automation.domain.entity.WorkflowRun;
 import com.aegis.automation.application.executor.ExecutionResult;
 import com.aegis.automation.application.executor.RemediationActionExecutor;
 import com.aegis.automation.application.executor.RemediationContext;
 import com.aegis.automation.application.executor.VerificationResult;
+import com.aegis.automation.domain.entity.Playbook;
+import com.aegis.automation.domain.entity.WorkflowApproval;
+import com.aegis.automation.domain.entity.WorkflowRun;
 import com.aegis.automation.domain.model.ActionType;
 import com.aegis.automation.domain.model.ApprovalDecision;
 import com.aegis.automation.domain.model.WorkflowRunStatus;
@@ -147,7 +147,8 @@ public class ForgeAutomationService {
         VerificationResult verifyResult = executor.verify(context);
         if (verifyResult.verified()) {
           initialResult = execResult.summary() + " | " + verifyResult.verificationProof();
-          initialLog = execResult.executionLog() + "\n[" + Instant.now() + "] " + verifyResult.details();
+          initialLog =
+              execResult.executionLog() + "\n[" + Instant.now() + "] " + verifyResult.details();
         } else {
           initialStatus = WorkflowRunStatus.ROLLED_BACK;
           ExecutionResult rbResult = executor.rollback(context);
@@ -162,7 +163,8 @@ public class ForgeAutomationService {
                   + rbResult.executionLog();
         }
       } else {
-        initialResult = "Directly executed: " + playbook.getActionType() + " on " + request.targetResource();
+        initialResult =
+            "Directly executed: " + playbook.getActionType() + " on " + request.targetResource();
         initialLog = "Workflow executed automatically without manual gate requirement.";
       }
     }
@@ -258,11 +260,15 @@ public class ForgeAutomationService {
                 + verifyResult.details();
         run.setExecutionLog(logText);
       } else {
-        log.warn("Post-remediation verification failed for run {}. Triggering rollback.", run.getId());
+        log.warn(
+            "Post-remediation verification failed for run {}. Triggering rollback.", run.getId());
         ExecutionResult rbResult = executor.rollback(context);
         run.setStatus(WorkflowRunStatus.ROLLED_BACK);
         run.setCompletedAt(Instant.now());
-        run.setResult("Verification probe failed: " + verifyResult.details() + ". Compensating rollback completed.");
+        run.setResult(
+            "Verification probe failed: "
+                + verifyResult.details()
+                + ". Compensating rollback completed.");
         String logText =
             (run.getExecutionLog() != null ? run.getExecutionLog() + "\n" : "")
                 + "["
@@ -377,7 +383,8 @@ public class ForgeAutomationService {
             .stateSnapshot(Map.of())
             .build();
 
-    String rollbackSummary = "Compensating rollback completed for " + run.getPlaybook().getActionType();
+    String rollbackSummary =
+        "Compensating rollback completed for " + run.getPlaybook().getActionType();
     String rollbackLog = "";
 
     if (executor != null) {

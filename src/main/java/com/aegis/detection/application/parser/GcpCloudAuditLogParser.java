@@ -60,24 +60,28 @@ public class GcpCloudAuditLogParser {
       }
     }
 
-    String serviceName = protoPayload.path("serviceName").asText(node.path("serviceName").asText("gcp.services"));
-    String resourceName = protoPayload.path("resourceName").asText(node.path("resourceName").asText("projects/_/global"));
-    String principalEmail = protoPayload.path("authenticationInfo").path("principalEmail").asText(node.path("principal").asText("unknown-principal"));
-    String callerIp = protoPayload.path("requestMetadata").path("callerIp").asText(node.path("callerIp").asText(null));
+    String serviceName =
+        protoPayload.path("serviceName").asText(node.path("serviceName").asText("gcp.services"));
+    String resourceName =
+        protoPayload
+            .path("resourceName")
+            .asText(node.path("resourceName").asText("projects/_/global"));
+    String principalEmail =
+        protoPayload
+            .path("authenticationInfo")
+            .path("principalEmail")
+            .asText(node.path("principal").asText("unknown-principal"));
+    String callerIp =
+        protoPayload
+            .path("requestMetadata")
+            .path("callerIp")
+            .asText(node.path("callerIp").asText(null));
     String insertId = node.path("insertId").asText(UUID.randomUUID().toString());
 
     @SuppressWarnings("unchecked")
     Map<String, Object> rawMap = objectMapper.convertValue(node, Map.class);
 
     return new TelemetryIngestRequest(
-        insertId,
-        serviceName,
-        methodName,
-        principalEmail,
-        callerIp,
-        resourceName,
-        "gcp",
-        rawMap
-    );
+        insertId, serviceName, methodName, principalEmail, callerIp, resourceName, "gcp", rawMap);
   }
 }

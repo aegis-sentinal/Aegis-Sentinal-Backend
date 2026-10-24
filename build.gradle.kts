@@ -75,6 +75,24 @@ tasks.withType<Test> {
     environment("GOOGLE_CLIENT_SECRET", "mock-google-client-secret")
 }
 
+tasks.named<org.springframework.boot.gradle.tasks.run.BootRun>("bootRun") {
+    val envFile = file(".env")
+    if (envFile.exists()) {
+        envFile.readLines().forEach { line ->
+            val trimmed = line.trim()
+            if (trimmed.isNotEmpty() && !trimmed.startsWith("#") && trimmed.contains("=")) {
+                val parts = trimmed.split("=", limit = 2)
+                val key = parts[0].trim()
+                val value = parts[1].trim().removeSurrounding("\"").removeSurrounding("'")
+                environment(key, value)
+            }
+        }
+    }
+    environment("AEGIS_JWT_SECRET", System.getenv("AEGIS_JWT_SECRET") ?: "dGhpcy1pcy1hLXZlcnktc2VjdXJlLWRldmVsb3BtZW50LWp3dC1zZWNyZXQta2V5LTMyLWJ5dGVzLW1pbg==")
+    environment("GOOGLE_CLIENT_ID", System.getenv("GOOGLE_CLIENT_ID") ?: "mock-google-client-id")
+    environment("GOOGLE_CLIENT_SECRET", System.getenv("GOOGLE_CLIENT_SECRET") ?: "mock-google-client-secret")
+}
+
 jacoco {
     toolVersion = "0.8.13"
 }

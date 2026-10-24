@@ -29,7 +29,8 @@ class MultiCloudParserTest {
     Map<String, Object> record =
         Map.of(
             "operationName", "Microsoft.Authorization/roleAssignments/write",
-            "resourceId", "/subscriptions/sub-1/resourceGroups/rg-prod/providers/Microsoft.Authorization/roleAssignments/ra-1",
+            "resourceId",
+                "/subscriptions/sub-1/resourceGroups/rg-prod/providers/Microsoft.Authorization/roleAssignments/ra-1",
             "caller", "admin@company.com",
             "httpRequest", Map.of("clientIpAddress", "198.51.100.22"),
             "correlationId", "corr-12345");
@@ -52,14 +53,16 @@ class MultiCloudParserTest {
   void gcpParser_parsesValidPayload() {
     Map<String, Object> entry =
         Map.of(
-            "insertId", "insert-gcp-99",
+            "insertId",
+            "insert-gcp-99",
             "protoPayload",
-                Map.of(
-                    "serviceName", "storage.googleapis.com",
-                    "methodName", "storage.setIamPermissions",
-                    "resourceName", "projects/_/buckets/acme-confidential-data",
-                    "authenticationInfo", Map.of("principalEmail", "service-account@acme-prod.iam.gserviceaccount.com"),
-                    "requestMetadata", Map.of("callerIp", "203.0.113.88")));
+            Map.of(
+                "serviceName", "storage.googleapis.com",
+                "methodName", "storage.setIamPermissions",
+                "resourceName", "projects/_/buckets/acme-confidential-data",
+                "authenticationInfo",
+                    Map.of("principalEmail", "service-account@acme-prod.iam.gserviceaccount.com"),
+                "requestMetadata", Map.of("callerIp", "203.0.113.88")));
 
     Map<String, Object> payload = Map.of("entries", List.of(entry));
 

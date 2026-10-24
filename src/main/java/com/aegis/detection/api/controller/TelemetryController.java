@@ -1,8 +1,11 @@
 package com.aegis.detection.api.controller;
 
 import com.aegis.common.exception.BadRequestException;
+import com.aegis.detection.api.dto.TelemetryAnalysisRequest;
+import com.aegis.detection.api.dto.TelemetryAnalysisResponse;
 import com.aegis.detection.api.dto.TelemetryIngestRequest;
 import com.aegis.detection.api.dto.TelemetryIngestResponse;
+import com.aegis.detection.application.service.TelemetryAnalysisService;
 import com.aegis.detection.application.service.TelemetryIngestionService;
 import com.aegis.identity.api.dto.ApiErrorResponse;
 import com.aegis.identity.infrastructure.security.tenant.TenantContext;
@@ -35,6 +38,17 @@ import org.springframework.web.bind.annotation.RestController;
 public class TelemetryController {
 
   private final TelemetryIngestionService telemetryIngestionService;
+  private final TelemetryAnalysisService telemetryAnalysisService;
+
+  @Operation(
+      summary = "Analyze raw log with format validation and Sentinel Core AI model classification",
+      description =
+          "Validates cloud log formatting, reports detailed errors if invalid, and runs multi-model anomaly scoring and entity extraction.")
+  @PostMapping("/analyze")
+  public TelemetryAnalysisResponse analyzeTelemetry(
+      @Valid @RequestBody TelemetryAnalysisRequest request) {
+    return telemetryAnalysisService.analyze(request);
+  }
 
   @Operation(
       summary = "Ingest cloud telemetry event",
@@ -72,7 +86,8 @@ public class TelemetryController {
 
   @Operation(
       summary = "Ingest Azure Activity Logs & Entra ID telemetry",
-      description = "Parses and normalizes Azure Monitor Activity Logs, evaluating them against Azure detection rules.")
+      description =
+          "Parses and normalizes Azure Monitor Activity Logs, evaluating them against Azure detection rules.")
   @PostMapping("/azure")
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("hasAuthority('alert:write')")
@@ -80,14 +95,17 @@ public class TelemetryController {
       @RequestBody java.util.Map<String, Object> payload) {
     TenantContext context = TenantContext.get();
     if (context == null || context.organizationId() == null) {
-      throw new BadRequestException("Organization tenant context required for telemetry ingestion.");
+      throw new BadRequestException(
+          "Organization tenant context required for telemetry ingestion.");
     }
-    return telemetryIngestionService.ingestAzure(payload, context.organizationId(), context.workspaceId());
+    return telemetryIngestionService.ingestAzure(
+        payload, context.organizationId(), context.workspaceId());
   }
 
   @Operation(
       summary = "Ingest GCP Cloud Audit Logs & Pub/Sub telemetry",
-      description = "Parses and normalizes GCP Cloud Audit Logs, evaluating them against GCP detection rules.")
+      description =
+          "Parses and normalizes GCP Cloud Audit Logs, evaluating them against GCP detection rules.")
   @PostMapping("/gcp")
   @ResponseStatus(HttpStatus.CREATED)
   @PreAuthorize("hasAuthority('alert:write')")
@@ -95,8 +113,10 @@ public class TelemetryController {
       @RequestBody java.util.Map<String, Object> payload) {
     TenantContext context = TenantContext.get();
     if (context == null || context.organizationId() == null) {
-      throw new BadRequestException("Organization tenant context required for telemetry ingestion.");
+      throw new BadRequestException(
+          "Organization tenant context required for telemetry ingestion.");
     }
-    return telemetryIngestionService.ingestGcp(payload, context.organizationId(), context.workspaceId());
+    return telemetryIngestionService.ingestGcp(
+        payload, context.organizationId(), context.workspaceId());
   }
 }

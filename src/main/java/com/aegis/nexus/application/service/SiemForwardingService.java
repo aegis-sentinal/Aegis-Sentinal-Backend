@@ -54,9 +54,15 @@ public class SiemForwardingService {
       try {
         SplunkHecDispatcher.DispatchResult result = null;
         switch (connector.getConnectorKey().toLowerCase()) {
-          case "splunk" -> result = splunkDispatcher.dispatch(alert, "https://hec.splunk.internal:8088", "token");
-          case "elastic" -> result = elasticDispatcher.dispatch(alert, "https://logstash.elastic.internal:5044");
-          case "slack" -> result = slackDispatcher.dispatch(alert, "https://hooks.slack.com/services/mock", "#soc-alerts");
+          case "splunk" ->
+              result =
+                  splunkDispatcher.dispatch(alert, "https://hec.splunk.internal:8088", "token");
+          case "elastic" ->
+              result = elasticDispatcher.dispatch(alert, "https://logstash.elastic.internal:5044");
+          case "slack" ->
+              result =
+                  slackDispatcher.dispatch(
+                      alert, "https://hooks.slack.com/services/mock", "#soc-alerts");
           case "pagerduty" -> {
             if (alert.getSeverity() == AlertSeverity.CRITICAL) {
               result = pagerDutyDispatcher.dispatch(alert, "pd-routing-key");
@@ -71,7 +77,10 @@ public class SiemForwardingService {
           connectorRepository.save(connector);
         }
       } catch (Exception e) {
-        log.warn("Failed dispatching alert to connector {}: {}", connector.getConnectorKey(), e.getMessage());
+        log.warn(
+            "Failed dispatching alert to connector {}: {}",
+            connector.getConnectorKey(),
+            e.getMessage());
       }
     }
   }
@@ -82,7 +91,8 @@ public class SiemForwardingService {
         connectorRepository
             .findByOrganizationIdAndConnectorKey(organizationId, connectorKey)
             .orElseThrow(
-                () -> new ResourceNotFoundException("Connector not found for key: " + connectorKey));
+                () ->
+                    new ResourceNotFoundException("Connector not found for key: " + connectorKey));
 
     Alert testAlert =
         Alert.builder()
@@ -101,11 +111,20 @@ public class SiemForwardingService {
 
     SplunkHecDispatcher.DispatchResult result;
     switch (connectorKey.toLowerCase()) {
-      case "splunk" -> result = splunkDispatcher.dispatch(testAlert, "https://hec.splunk.internal:8088", "token");
-      case "elastic" -> result = elasticDispatcher.dispatch(testAlert, "https://logstash.elastic.internal:5044");
-      case "slack" -> result = slackDispatcher.dispatch(testAlert, "https://hooks.slack.com/services/mock", "#soc-alerts");
+      case "splunk" ->
+          result =
+              splunkDispatcher.dispatch(testAlert, "https://hec.splunk.internal:8088", "token");
+      case "elastic" ->
+          result = elasticDispatcher.dispatch(testAlert, "https://logstash.elastic.internal:5044");
+      case "slack" ->
+          result =
+              slackDispatcher.dispatch(
+                  testAlert, "https://hooks.slack.com/services/mock", "#soc-alerts");
       case "pagerduty" -> result = pagerDutyDispatcher.dispatch(testAlert, "pd-routing-key");
-      default -> result = new SplunkHecDispatcher.DispatchResult(true, "Mock ping completed successfully", "95ms");
+      default ->
+          result =
+              new SplunkHecDispatcher.DispatchResult(
+                  true, "Mock ping completed successfully", "95ms");
     }
 
     if (result.success()) {

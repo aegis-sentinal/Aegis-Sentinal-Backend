@@ -11,9 +11,9 @@ public record ExecutionResult(
     String summary,
     Map<String, Object> outputState,
     Instant timestamp,
-    String errorMessage
-) {
-  public static ExecutionResult successful(String summary, String log, Map<String, Object> outputState) {
+    String errorMessage) {
+  public static ExecutionResult successful(
+      String summary, String log, Map<String, Object> outputState) {
     return ExecutionResult.builder()
         .success(true)
         .summary(summary)

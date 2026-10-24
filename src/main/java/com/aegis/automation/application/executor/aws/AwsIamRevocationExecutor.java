@@ -30,7 +30,12 @@ public class AwsIamRevocationExecutor implements RemediationActionExecutor {
     log.info("Executing IAM credential revocation for target: {}", resource);
 
     StringBuilder logBuilder = new StringBuilder();
-    logBuilder.append("[").append(Instant.now()).append("] Initiating AWS IAM credential revocation for ").append(resource).append("\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Initiating AWS IAM credential revocation for ")
+        .append(resource)
+        .append("\n");
 
     Map<String, Object> state = new HashMap<>();
     state.put("targetResource", resource);
@@ -39,15 +44,28 @@ public class AwsIamRevocationExecutor implements RemediationActionExecutor {
     state.put("policyDocument", DENY_ALL_POLICY_DOC);
     state.put("deactivatedKeysCount", 2);
 
-    logBuilder.append("[").append(Instant.now()).append("] Attached explicit IAM DenyAll boundary policy: ").append(DENY_ALL_POLICY_NAME).append("\n");
-    logBuilder.append("[").append(Instant.now()).append("] Invoked AWS STS RevokeOlderSessions API for actor.\n");
-    logBuilder.append("[").append(Instant.now()).append("] Set status=Inactive for all active access keys associated with ").append(resource).append(".\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Attached explicit IAM DenyAll boundary policy: ")
+        .append(DENY_ALL_POLICY_NAME)
+        .append("\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Invoked AWS STS RevokeOlderSessions API for actor.\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Set status=Inactive for all active access keys associated with ")
+        .append(resource)
+        .append(".\n");
 
     return ExecutionResult.successful(
-        "Successfully deactivated IAM access keys and attached DenyAll boundary policy to " + resource,
+        "Successfully deactivated IAM access keys and attached DenyAll boundary policy to "
+            + resource,
         logBuilder.toString(),
-        state
-    );
+        state);
   }
 
   @Override
@@ -63,10 +81,13 @@ public class AwsIamRevocationExecutor implements RemediationActionExecutor {
     observed.put("probeTimestamp", Instant.now().toString());
 
     return VerificationResult.passed(
-        "VERIFIED: AWS IAM user " + resource + " has 0 active credentials and boundary policy " + DENY_ALL_POLICY_NAME + " is enforced.",
+        "VERIFIED: AWS IAM user "
+            + resource
+            + " has 0 active credentials and boundary policy "
+            + DENY_ALL_POLICY_NAME
+            + " is enforced.",
         "Verified via AWS IAM GetUserPolicy and ListAccessKeys API probe.",
-        observed
-    );
+        observed);
   }
 
   @Override
@@ -75,14 +96,26 @@ public class AwsIamRevocationExecutor implements RemediationActionExecutor {
     log.warn("Rolling back IAM credential revocation for target: {}", resource);
 
     StringBuilder logBuilder = new StringBuilder();
-    logBuilder.append("[").append(Instant.now()).append("] Executing compensating rollback for IAM credentials on ").append(resource).append("\n");
-    logBuilder.append("[").append(Instant.now()).append("] Removed inline boundary policy: ").append(DENY_ALL_POLICY_NAME).append("\n");
-    logBuilder.append("[").append(Instant.now()).append("] Restored standard credential policy state.\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Executing compensating rollback for IAM credentials on ")
+        .append(resource)
+        .append("\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Removed inline boundary policy: ")
+        .append(DENY_ALL_POLICY_NAME)
+        .append("\n");
+    logBuilder
+        .append("[")
+        .append(Instant.now())
+        .append("] Restored standard credential policy state.\n");
 
     return ExecutionResult.successful(
         "Compensating rollback complete: Detached " + DENY_ALL_POLICY_NAME + " from " + resource,
         logBuilder.toString(),
-        Map.of("rolledBack", true, "timestamp", Instant.now().toString())
-    );
+        Map.of("rolledBack", true, "timestamp", Instant.now().toString()));
   }
 }

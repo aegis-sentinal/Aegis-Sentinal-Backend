@@ -156,11 +156,7 @@ public class IncidentService {
     return correlationEngine.correlateAlert(alert);
   }
 
-  public record EvidenceDownload(
-      String filename,
-      String contentType,
-      byte[] data
-  ) {}
+  public record EvidenceDownload(String filename, String contentType, byte[] data) {}
 
   @Transactional
   public EvidenceArtifactResponse uploadEvidence(
@@ -182,14 +178,16 @@ public class IncidentService {
     if (artifactTypeStr != null) {
       try {
         type = ArtifactType.valueOf(artifactTypeStr.toUpperCase());
-      } catch (Exception ignored) {}
+      } catch (Exception ignored) {
+      }
     }
 
     var uploadResult = minioStorageService.storeEvidence(incidentId, filename, contentType, data);
 
-    String rawPreview = data != null && data.length < 50000
-        ? new String(data, StandardCharsets.UTF_8)
-        : "[Binary artifact stored in MinIO: " + uploadResult.storageUri() + "]";
+    String rawPreview =
+        data != null && data.length < 50000
+            ? new String(data, StandardCharsets.UTF_8)
+            : "[Binary artifact stored in MinIO: " + uploadResult.storageUri() + "]";
 
     EvidenceArtifact artifact =
         EvidenceArtifact.builder()
@@ -209,7 +207,12 @@ public class IncidentService {
             .incident(incident)
             .eventType(TimelineEventType.EVIDENCE_COLLECTED)
             .title("Forensic Evidence Uploaded: " + artifact.getName())
-            .description("Artifact SHA-256: " + uploadResult.checksum() + " (" + (data != null ? data.length : 0) + " bytes)")
+            .description(
+                "Artifact SHA-256: "
+                    + uploadResult.checksum()
+                    + " ("
+                    + (data != null ? data.length : 0)
+                    + " bytes)")
             .source(authorName != null ? authorName : "forensics")
             .build();
     timelineEventRepository.save(event);

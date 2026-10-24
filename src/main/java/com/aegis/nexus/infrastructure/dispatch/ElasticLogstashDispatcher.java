@@ -18,7 +18,8 @@ public class ElasticLogstashDispatcher {
 
   public SplunkHecDispatcher.DispatchResult dispatch(Alert alert, String endpointUrl) {
     long startTime = System.currentTimeMillis();
-    log.info("Dispatching alert [{}] to Elastic Logstash endpoint [{}]", alert.getId(), endpointUrl);
+    log.info(
+        "Dispatching alert [{}] to Elastic Logstash endpoint [{}]", alert.getId(), endpointUrl);
 
     try {
       Map<String, Object> ecsPayload = new HashMap<>();
@@ -32,7 +33,9 @@ public class ElasticLogstashDispatcher {
       ecsPayload.put("event", event);
 
       Map<String, Object> cloud = new HashMap<>();
-      cloud.put("provider", alert.getCloudProvider() != null ? alert.getCloudProvider().getValue() : "aws");
+      cloud.put(
+          "provider",
+          alert.getCloudProvider() != null ? alert.getCloudProvider().getValue() : "aws");
       cloud.put("resource_id", alert.getResourceId());
       ecsPayload.put("cloud", cloud);
 
@@ -46,10 +49,14 @@ public class ElasticLogstashDispatcher {
       log.debug("Elastic ECS formatted JSON: {}", payloadJson);
 
       long latencyMs = System.currentTimeMillis() - startTime + 95;
-      return new SplunkHecDispatcher.DispatchResult(true, "Successfully forwarded ECS event to Elastic Logstash input pipeline", latencyMs + "ms");
+      return new SplunkHecDispatcher.DispatchResult(
+          true,
+          "Successfully forwarded ECS event to Elastic Logstash input pipeline",
+          latencyMs + "ms");
     } catch (Exception e) {
       log.error("Elastic Logstash dispatch failed: {}", e.getMessage(), e);
-      return new SplunkHecDispatcher.DispatchResult(false, "Elastic Logstash dispatch failed: " + e.getMessage(), "0ms");
+      return new SplunkHecDispatcher.DispatchResult(
+          false, "Elastic Logstash dispatch failed: " + e.getMessage(), "0ms");
     }
   }
 }

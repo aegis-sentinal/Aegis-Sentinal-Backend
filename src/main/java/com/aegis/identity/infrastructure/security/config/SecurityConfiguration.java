@@ -46,7 +46,8 @@ public class SecurityConfiguration {
       OAuth2SuccessHandler oAuth2SuccessHandler,
       OAuth2FailureHandler oAuth2FailureHandler,
       RateLimitingFilter rateLimitingFilter,
-      @Value("${aegis.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+      @Value(
+          "${aegis.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173,https://aegissentinal.sushantkumaryadav.com.np}")
           String allowedOriginsStr) {
 
     this.authoritiesConverter = authoritiesConverter;
@@ -54,7 +55,11 @@ public class SecurityConfiguration {
     this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     this.oAuth2FailureHandler = oAuth2FailureHandler;
     this.rateLimitingFilter = rateLimitingFilter;
-    this.allowedOrigins = Arrays.asList(allowedOriginsStr.split(","));
+    this.allowedOrigins =
+        Arrays.stream(allowedOriginsStr.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
   }
 
   @Bean
@@ -115,7 +120,9 @@ public class SecurityConfiguration {
             authorize ->
                 authorize
                     .requestMatchers(
+                        "/actuator/health",
                         "/actuator/health/**",
+                        "/actuator/info",
                         "/oauth2/**",
                         "/login/**",
                         "/error",
@@ -130,7 +137,9 @@ public class SecurityConfiguration {
                         "/api/aegis/v1/auth/verify-email",
                         "/api/aegis/v1/auth/resend-verification",
                         "/api/aegis/v1/auth/mfa/verify",
-                        "/api/aegis/v1/auth/mfa/recovery")
+                        "/api/aegis/v1/auth/mfa/recovery",
+                        "/api/aegis/v1/telemetry/analyze",
+                        "/api/aegis/v1/oracle/chat")
                     .permitAll()
                     .anyRequest()
                     .authenticated())

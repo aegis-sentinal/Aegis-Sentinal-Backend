@@ -21,7 +21,11 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
-@SpringBootTest(properties = "aegis.security.rate-limit.auth-per-minute=20")
+@SpringBootTest(
+    properties = {
+      "aegis.security.rate-limit.auth-per-minute=20",
+      "management.health.redis.enabled=false"
+    })
 class ApiSecurityAndAbuseTest {
 
   @Autowired private WebApplicationContext context;
