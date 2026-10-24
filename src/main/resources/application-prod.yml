@@ -58,6 +58,8 @@ logging:
 
 aegis:
   security:
+    cors:
+      allowed-origins: ${AEGIS_SECURITY_CORS_ALLOWED_ORIGINS:https://aegissentinal.sushantkumaryadav.com.np,http://localhost:3000}
     jwt:
       issuer: aegis-sentinel
       secret: ${AEGIS_JWT_SECRET}

@@ -46,7 +46,8 @@ public class SecurityConfiguration {
       OAuth2SuccessHandler oAuth2SuccessHandler,
       OAuth2FailureHandler oAuth2FailureHandler,
       RateLimitingFilter rateLimitingFilter,
-      @Value("${aegis.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173}")
+      @Value(
+          "${aegis.security.cors.allowed-origins:http://localhost:3000,http://localhost:5173,https://aegissentinal.sushantkumaryadav.com.np}")
           String allowedOriginsStr) {
 
     this.authoritiesConverter = authoritiesConverter;
@@ -54,7 +55,11 @@ public class SecurityConfiguration {
     this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     this.oAuth2FailureHandler = oAuth2FailureHandler;
     this.rateLimitingFilter = rateLimitingFilter;
-    this.allowedOrigins = Arrays.asList(allowedOriginsStr.split(","));
+    this.allowedOrigins =
+        Arrays.stream(allowedOriginsStr.split(","))
+            .map(String::trim)
+            .filter(s -> !s.isEmpty())
+            .toList();
   }
 
   @Bean
