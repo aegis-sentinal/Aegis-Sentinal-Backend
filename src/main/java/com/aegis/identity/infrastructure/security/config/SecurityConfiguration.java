@@ -6,7 +6,6 @@ import com.aegis.identity.infrastructure.security.oauth.OAuth2FailureHandler;
 import com.aegis.identity.infrastructure.security.oauth.OAuth2SuccessHandler;
 import com.aegis.identity.infrastructure.security.ratelimit.RateLimitingFilter;
 import com.aegis.identity.infrastructure.security.tenant.TenantResolverFilter;
-import java.util.Arrays;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -55,11 +54,14 @@ public class SecurityConfiguration {
     this.oAuth2SuccessHandler = oAuth2SuccessHandler;
     this.oAuth2FailureHandler = oAuth2FailureHandler;
     this.rateLimitingFilter = rateLimitingFilter;
-    this.allowedOrigins =
-        Arrays.stream(allowedOriginsStr.split(","))
-            .map(String::trim)
-            .filter(s -> !s.isEmpty())
-            .toList();
+    List<String> origins = new java.util.ArrayList<>();
+    for (String origin : allowedOriginsStr.split(",")) {
+      String trimmed = origin.trim();
+      if (!trimmed.isEmpty()) {
+        origins.add(trimmed);
+      }
+    }
+    this.allowedOrigins = List.copyOf(origins);
   }
 
   @Bean
