@@ -3,7 +3,6 @@ package com.aegis.detection.api.dto;
 import com.aegis.detection.domain.entity.Alert;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -25,13 +24,18 @@ public record AlertResponse(
     @JsonProperty("updated_at") Instant updatedAt) {
 
   public static AlertResponse fromEntity(Alert alert) {
-    List<String> services =
-        alert.getAffectedServices() != null
-            ? Arrays.stream(alert.getAffectedServices().split(","))
-                .map(String::trim)
-                .filter(s -> !s.isEmpty())
-                .toList()
-            : Collections.emptyList();
+    List<String> services;
+    if (alert.getAffectedServices() != null) {
+      services = new java.util.ArrayList<>();
+      for (String service : alert.getAffectedServices().split(",")) {
+        String trimmed = service.trim();
+        if (!trimmed.isEmpty()) {
+          services.add(trimmed);
+        }
+      }
+    } else {
+      services = Collections.emptyList();
+    }
 
     return new AlertResponse(
         alert.getId(),

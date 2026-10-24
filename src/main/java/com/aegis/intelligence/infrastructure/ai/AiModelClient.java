@@ -39,7 +39,7 @@ public class AiModelClient {
 
   public String getActiveProviderName() {
     if (!geminiApiKey.isEmpty()) {
-      return "Google Gemini (1.5 Flash)";
+      return "Google Gemini (Gemini Flash)";
     }
     if (!openaiApiKey.isEmpty()) {
       return "OpenAI (GPT-4o-mini)";
@@ -75,7 +75,7 @@ public class AiModelClient {
 
   private Optional<String> callGemini(String systemPrompt, String userPrompt) throws Exception {
     String endpoint =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key="
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key="
             + geminiApiKey;
 
     String combinedText = systemPrompt + "\n\nUser Security Log/Query:\n" + userPrompt;
@@ -93,6 +93,7 @@ public class AiModelClient {
         HttpRequest.newBuilder()
             .uri(URI.create(endpoint))
             .header("Content-Type", "application/json")
+            .header("X-goog-api-key", geminiApiKey)
             .POST(HttpRequest.BodyPublishers.ofString(requestJson))
             .timeout(Duration.ofSeconds(20))
             .build();

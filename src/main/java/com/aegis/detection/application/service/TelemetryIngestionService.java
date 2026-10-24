@@ -143,7 +143,7 @@ public class TelemetryIngestionService {
                 + ")";
         severity = matchedRule.getSeverity();
         riskScore = matchedRule.getRiskScore();
-      } else {
+      } else if (matchedIoC != null) {
         title = "Watchtower Threat Intel Hit: " + matchedIoC.getType();
         description =
             "Observed activity from recognized adversary indicator: "
@@ -152,9 +152,14 @@ public class TelemetryIngestionService {
                 + matchedIoC.getThreatDescription();
         severity = AlertSeverity.HIGH;
         riskScore = matchedIoC.getConfidenceScore();
+      } else {
+        title = "Suspicious Telemetry Activity Detected";
+        description = "Observed suspicious telemetry activity from " + request.eventName();
+        severity = AlertSeverity.MEDIUM;
+        riskScore = 50;
       }
 
-      if (matchedIoC != null) {
+      if (matchedRule != null && matchedIoC != null) {
         severity = AlertSeverity.CRITICAL;
         riskScore = Math.max(riskScore, 95);
         description +=
